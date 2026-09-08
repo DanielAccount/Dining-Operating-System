@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dining_operation_app
+    username: postgres
+    password: postgre
+
+logging:
+  level:
+    org.flywaydb: debug
+    org.springframework.boot.autoconfigure.flyway: debug
+    org.hibernate.SQL: debug
+
+app:
+  security:
+    jwt:
+      secret: local_dev_secret_change_me_please_1234567890_abcdef_1234567890
+      expiration-ms: 3600000
+
+
+#      Important:
+#      The JWT secret must be long enough for HS256.
+#      For local development, this is okay.
+#      For production later, use environment variables.

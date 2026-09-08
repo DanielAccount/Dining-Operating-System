@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: dining_operation_app
+
+  profiles:
+    active: local
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    out-of-order: false
+    clean-disabled: true
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        tenant_identifier_resolver: com.qr_ordering_system.app.common.tenant.HibernateTenantIdentifierResolver
+
+server:
+  shutdown: graceful
+
+management:
+  endpoint:
+    flyway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: health,info,flyway
