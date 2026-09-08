@@ -1,0 +1,151 @@
+<div class="flex items-center justify-between w-full">
+    <div class="font-serif text-2xl tracking-tight text-stone-900 sm:text-1xl">
+        <h1 >Modifiers</h1>
+    </div>
+
+    <div>
+       <button class="btn btn-neutral"  onclick="modifiers_modal.showModal()">+ Create Modifier Group</button>
+    </div>
+</div>
+
+
+<!-- Modal -->
+<dialog id="modifiers_modal" class="modal">
+    <div class="modal-box bg-[#FBF9F6] text-[#191919]">
+        <form method="dialog">
+            <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        </form>
+        <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">Add Modifier Group</h3>
+        
+        <!-- Parent form uses space-y-4 to space out form-control groups -->
+        <form method="dialog" class="space-y-4 mt-4">
+            
+            <!-- Group 1 -->
+            <div class="form-control w-full">
+                <label class="label pb-1">
+                    <span class="label-text font-serif text-sm font-medium text-stone-700">Modifer Group Name</span>
+                </label>
+
+                <input 
+                    type="text" placeholder="eg. Spiceness Level, Toppings, Add-ons etc.." 
+                    class="input input-bordered w-full bg-white rounded-lg" required 
+                />
+            </div>
+
+            <!-- Group 2 -->
+            <div class="form-control w-full">
+                <label class="label" pb-1>
+                    <span class="font-serif text-2xl tracking-tight text-stone-700 text-sm ">အုပ်စု အမည် (မြန်မာ)</span>
+                </label>
+
+                <input 
+                    type="text" 
+                    placeholder="အစပ်အဆာအဆင့် ၊ အပေါ်မှဖြူးရမည့်အရာမျာ ၊ အပိုဆောင်း အဆာပလာများ စသည်..." 
+                    class="input input-bordered w-full rounded-lg" required 
+                />
+            </div>
+
+            <!-- Group 3 -->
+            <div class="grid grid-cols-3 gap-4 w-full">
+                <!-- Required -->
+                <div class="form-control w-full">
+                    <label class="label pb-1">
+                        <span class="label-text font-serif text-sm font-medium text-stone-700">Required</span>
+                    </label>
+                    <select class="select select-bordered bg-white rounded-lg w-full" required>
+                        <option value="yes">Yes (Required)</option>
+                        <option value="no">No (Optional)</option>
+                    </select>
+                </div>
+
+                <!-- Min Select -->
+                <div class="form-control w-full">
+                    <label class="label pb-1">
+                        <span class="label-text font-serif text-sm font-medium text-stone-700">Min-Select</span>
+                    </label>
+                    <input
+                        type="number"
+                        min="0" 
+                        placeholder="0" 
+                        class="input input-bordered w-full bg-white rounded-lg" 
+                        required 
+                    />
+                </div>
+
+                <!-- Max Select -->
+                <div class="form-control w-full">
+                    <label class="label pb-1">
+                        <span class="label-text font-serif text-sm font-medium text-stone-700">Max-Select</span>
+                    </label>
+                    <input
+                        type="number"
+                        min="1" 
+                        placeholder="1" 
+                        class="input input-bordered w-full bg-white rounded-lg" 
+                        required 
+                    />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 w-full">
+                <div class="form-control w-full">
+                    <label class="label pb-1">
+                        <span class="label-text font-serif text-sm font-bold text-stone-700">Modifier Options</span>
+                    </label>
+                </div>
+
+                <div class="form-control w-full text-right">
+                    <label class="label pb-1 justify-end">
+                        <span class="label-text font-serif text-sm font-medium text-stone-700 cursor-pointer">+ Add Options</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Add Options -->
+             <div class="grid grid-cols-3 gap-4 w-full">
+                <div class="form-control w-full">
+                    <label class="label pb-1">
+                        <span class="label-text font-serif text-sm font-medium text-stone-700">New Option</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        placeholder="Normal Spice, Sweet..." 
+                        class="input input-bordered w-full rounded-lg" required 
+                    />
+                </div>
+
+                <div class="form-control w-full">
+                    <label class="label pb-1">
+                        <span class="label-text font-serif text-sm font-medium text-stone-700">ရွေးချယ်မှုအသစ်</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        placeholder="Normal Spice, Sweet..." 
+                        class="input input-bordered w-full rounded-lg" required 
+                    />
+                </div>
+
+                <div class="form-control w-full">
+                    <label class="label pb-1">
+                        <span class="label-text font-serif text-sm font-medium text-stone-700">Price</span>
+                    </label>
+                    <input
+                        type="number"
+                        min="0" 
+                        placeholder="0" 
+                        class="input input-bordered w-full bg-white rounded-lg" 
+                        required 
+                    />
+                </div>
+            </div>
+
+            
+            <!-- Actions -->
+            <div class="modal-action pt-2">
+                <button class="btn btn-ghost" type="button" onclick="category_modal.close()">Cancel</button>
+                <button class="btn btn-neutral" type="submit">Save Category</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+

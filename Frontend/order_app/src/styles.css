@@ -1,0 +1,27 @@
+/* src/styles.css */
+@import "tailwindcss";
+@plugin "daisyui"{
+  themes: light --default;
+};
+
+/* Any root layer modifications */
+body {
+  @apply bg-[#fbf9f6] text-[#191919];
+}
+
+/* --- Global Claude Theme Core UI Elements --- */
+
+/* Global Inputs */
+.app-input {
+  @apply input input-ghost w-full bg-white !text-[#191919] border border-[#E5E2DD] rounded-lg px-4 py-3 h-auto focus:bg-white focus:border-[#191919] focus:outline-none focus:ring-1 focus:ring-[#191919] transition-all placeholder:text-[#A19E99] autofill:shadow-[inset_0_0_0_1000px_#ffffff] autofill:[-webkit-text-fill-color:#191919];
+}
+
+/* Global Buttons */
+.app-btn-primary {
+  @apply btn w-full bg-[#191919] hover:bg-[#2E2E2E] disabled:bg-[grey] disabled:text-[#E5E2DD] text-[#FBF9F6] border-none font-medium rounded-lg h-auto py-3 mt-2 normal-case tracking-wide transition-colors shadow-none flex items-center justify-center gap-2;
+}
+
+/* Global Statuses / Error Labels */
+.alert-error-custom {
+  @apply text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 text-center transition-all;
+}

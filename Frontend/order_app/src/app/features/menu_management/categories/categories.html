@@ -1,0 +1,111 @@
+<!-- Top Bar Header -->
+<div class="flex items-center justify-between w-full mb-6">
+  <div class="font-serif text-2xl tracking-tight text-stone-900">
+    <h1>Categories</h1>
+  </div>
+
+  <div>
+    <button type="button" class="btn btn-neutral" (click)="openCreateModal()">+ New Category</button>
+  </div> 
+</div>
+
+<!-- Dynamic Category Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+  @for (category of categories; track category.id) {
+    <div class="card bg-base-100 shadow-md border border-base-200">
+      <div class="card-body flex-row items-center justify-between py-6 px-5">
+        <div class="flex items-center gap-4">
+          <div class="bg-neutral text-neutral-content rounded-xl w-12 h-12 flex items-center justify-center shadow-sm shrink-0">
+            <span class="text-lg font-bold">{{ category.displayOrder }}</span>
+          </div>
+          
+          <div class="content space-y-1">
+            <h2 class="card-title text-lg font-bold tracking-tight text-base-content">
+              {{ category.localizedNames.en || 'Untitled' }}
+            </h2>
+            <p class="text-sm text-base-content/60 font-normal">
+              {{ category.localizedNames.mm }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Edit Button -->
+        <button 
+          type="button" 
+          (click)="openEditModal(category)"
+          class="btn btn-ghost btn-circle btn-sm text-base-content/50 hover:text-base-content transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" />
+            <path d="M16 5l3 3" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  } @empty {
+    <div class="col-span-full text-center py-12 text-base-content/60">
+      No categories available. Click "+ New Category" to add one.
+    </div>
+  }
+</div>
+
+<!-- Modal Dialog -->
+<dialog #categoryModal id="category_modal" class="modal">
+  <div class="modal-box bg-[#FBF9F6] text-[#191919]">
+    <button type="button" (click)="closeModal()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">
+      {{ editingCategoryId ? 'Edit Category' : 'Create Category' }}
+    </h3>
+    
+    <form [formGroup]="categoryForm" (ngSubmit)="saveCategory()" class="space-y-4 mt-4">
+      
+      <!-- English Name -->
+      <div class="form-control w-full">
+        <label class="label pb-1">
+          <span class="label-text font-serif text-sm font-medium text-stone-700">Category Name (English)</span>
+        </label>
+        <input 
+          type="text"
+          formControlName="englishName"
+          placeholder="Specials, Breakfast, Drinks etc.." 
+          class="input input-bordered w-full bg-white rounded-lg" 
+        />
+      </div>
+
+      <!-- Myanmar Name -->
+      <div class="form-control w-full">
+        <label class="label pb-1">
+          <span class="label-text font-serif text-sm font-medium text-stone-700">အုပ်စု အမည် (မြန်မာ)</span>
+        </label>
+        <input 
+          type="text" 
+          formControlName="myanmarName"
+          placeholder="အထူးသီးသန့်၊ မနက်စာ၊ အအေး စသည်..." 
+          class="input input-bordered w-full bg-white rounded-lg" 
+        />
+      </div>
+
+      <!-- Display Order -->
+      <div class="form-control w-full">
+        <label class="label pb-1">
+          <span class="label-text font-serif text-sm font-medium text-stone-700">Display Priority Order</span>
+        </label>
+        <input
+          type="number"
+          formControlName="displayOrder"
+          min="1" placeholder="1" 
+          class="input input-bordered w-full bg-white rounded-lg" 
+        />
+      </div>
+      
+      <!-- Actions -->
+      <div class="modal-action pt-2">
+        <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-neutral">
+          {{ editingCategoryId ? 'Update Category' : 'Save Category' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</dialog>

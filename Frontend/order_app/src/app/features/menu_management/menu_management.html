@@ -1,0 +1,33 @@
+<h1 class="font-serif text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
+    Menu Management
+</h1>
+
+<div  class="mt-6 w-fit shadow-md border-black-300 rounded-lg p-0 m-0" >
+<ul class="menu menu-horizontal lg:menu-horizontal bg-brown rounded-box">
+
+  <li>
+    <a routerLink="products_management" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+      Menu Products
+    </a>
+  </li>
+
+  <li>
+    <a routerLink="categories_management" routerLinkActive="active">
+      Categories
+    </a>
+  </li>
+
+  <li>
+     <a routerLink="modifiers_management" routerLinkActive="active">
+      Modifiers
+    </a>
+  </li>
+
+</ul>
+
+</div>
+
+<!-- Content Area: This is where the child components will render -->
+<div class="mt-6 p-6 border border-gray-200 rounded-lg  shadow-sm min-h-[300px]">
+  <router-outlet/>
+</div>

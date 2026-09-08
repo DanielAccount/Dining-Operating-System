@@ -1,0 +1,41 @@
+<div class="flex min-h-screen items-center justify-center bg-[#FBF9F6] p-4">
+
+  <fieldset class="fieldset border-[#E5E2DD] bg-white rounded-xl w-full max-w-sm border p-6 shadow-sm">
+    
+    <legend class="font-serif text-sm  tracking-tight text-stone-900 sm:text-3xl">
+      Login
+    </legend>
+
+    <form [formGroup] = "loginForm" (ngSubmit)="onSubmit()">
+
+
+      <label class="label text-sm font-small text-[#191919] mb-1">Email</label>
+        <input 
+          type="email"
+          class="app-input mb-3"
+          placeholder="Email" 
+          formControlName = "email"
+      />
+
+      <label class="label text-sm font-small text-[#191919] mb-1">Password</label>
+        <input
+          type="password" 
+            class="app-input mb-3"
+            placeholder="Password"
+            formControlName = "password" 
+        />
+
+      @if(errorMessage){
+        <h1 class="text-red-500">{{errorMessage}}</h1>
+      }
+        
+      <button class="app-btn-primary">Login</button>
+
+    </form>
+  
+</fieldset>
+
+  
+
+</div>
+
