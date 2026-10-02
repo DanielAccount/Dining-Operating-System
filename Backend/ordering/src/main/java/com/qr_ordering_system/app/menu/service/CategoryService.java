@@ -25,24 +25,25 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final MenuItemRepository menuItemRepository;
 
-    @Transactional
     public CategoryResponse create(CategoryCreateRequest request) {
         Category category = new Category();
         category.setLocalizedNames(new HashMap<>(request.localizedNames()));
 
-        int targetOrder = request.displayOrder() != null
-                ? Math.max(1, request.displayOrder())
-                : getNextDisplayOrder();
+        int maxOrder = categoryRepository.findMaxDisplayOrder();
 
-        int maxOrder = getNextDisplayOrder();
-        if (targetOrder > maxOrder) {
-            targetOrder = maxOrder;
+        if (request.displayOrder() != null) {
+            // Insert at a specific position; clamp to [1, max+1]
+            int targetOrder = Math.max(1, Math.min(request.displayOrder(), maxOrder + 1));
+            // Shift existing items at or after targetOrder up by 1
+            categoryRepository.shiftOrdersUp(targetOrder, Integer.MAX_VALUE, -1L);
+            category.setDisplayOrder(targetOrder);
+        } else {
+            // No position requested — append at end. maxOrder is 0 for an empty
+            // tenant, so the very first category lands on position 1 and the
+            // 1-based dense sequence holds from the start.
+            category.setDisplayOrder(maxOrder + 1);
         }
 
-        // Shift existing orders to make space
-        categoryRepository.shiftOrdersUp(targetOrder, Integer.MAX_VALUE, -1L);
-
-        category.setDisplayOrder(targetOrder);
         return CategoryMapper.toResponse(categoryRepository.save(category));
     }
 
@@ -59,7 +60,9 @@ public class CategoryService {
                 .toList();
     }
 
-    @Transactional
+    // NOTE: display-order reordering is not fully atomic under concurrent requests.
+    // The @Version optimistic lock protects the entity itself, but bulk @Modifying
+    // UPDATE queries bypass version checks. Acceptable for MVP menu management.
     public CategoryResponse update(Long id, CategoryUpdateRequest request) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
@@ -89,7 +92,6 @@ public class CategoryService {
         return CategoryMapper.toResponse(categoryRepository.save(category));
     }
 
-    @Transactional
     public void delete(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
@@ -102,12 +104,14 @@ public class CategoryService {
 
         int deletedOrder = category.getDisplayOrder();
         categoryRepository.delete(category);
-
-        // Compact remaining display orders
+        // Flush before renumbering, exactly as MenuItemService.delete does.
+        //
+        // @SoftDelete turns delete() into an UPDATE of is_deleted, and bulk
+        // @Modifying queries do not flush pending changes first. Without this the
+        // soft-delete has not been issued yet, so shiftOrdersAfterDelete would
+        // still see the deleted row and decrement its position too.
+        categoryRepository.flush();
         categoryRepository.shiftOrdersAfterDelete(deletedOrder);
     }
 
-    private int getNextDisplayOrder() {
-        return categoryRepository.findMaxDisplayOrder() + 1;
-    }
 }

@@ -29,6 +29,21 @@ public class JwtService {
         return expirationMs;
     }
 
+    /**
+     * Mints a token carrying the user's full permission set.
+     *
+     * KNOWN LIMITATION (accepted for MVP, revisit before Phase 7): permissions
+     * and role are baked into the token, so revoking a permission or changing a
+     * role has no effect until the token expires (app.security.jwt.expiration-ms,
+     * currently 1 hour). There is no refresh token, no version counter on the
+     * user and no revocation list. Until one of those exists, "I removed
+     * MENU_MANAGE from this user" is only true after they happen to refresh -
+     * the UI will hide the button while the API would still honour it.
+     *
+     * Fixing it properly means a token version (jti or a users.token_version
+     * column checked on every request) so a stale token can be rejected
+     * immediately.
+     */
     public String generateToken(
             Long userId,
             Long tenantId,

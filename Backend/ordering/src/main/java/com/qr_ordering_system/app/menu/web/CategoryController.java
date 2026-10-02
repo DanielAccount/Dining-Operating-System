@@ -20,13 +20,17 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    // Any authenticated staff member can list categories (needed for menus, POS, etc.)
+    // Any staff member who can see the menu can list categories (it is needed by
+    // the menu grid, the storefront and the customer menu). Deliberately
+    // MENU_VIEW rather than MENU_MANAGE: reading is not editing.
     @GetMapping
+    @PreAuthorize("hasAuthority('MENU_VIEW')")
     public ResponseEntity<List<CategoryResponse>> getAll() {
         return ResponseEntity.ok(categoryService.getAll());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('MENU_VIEW')")
     public ResponseEntity<CategoryResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(categoryService.getById(id));
     }

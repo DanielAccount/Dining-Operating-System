@@ -4,6 +4,11 @@ spring:
     username: postgres
     password: postgre
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
 logging:
   level:
     org.flywaydb: debug
@@ -11,6 +16,10 @@ logging:
     org.hibernate.SQL: debug
 
 app:
+  upload:
+    dir: uploads/menu-images
+    public-path: /uploads/menu-images
+
   security:
     jwt:
       secret: local_dev_secret_change_me_please_1234567890_abcdef_1234567890

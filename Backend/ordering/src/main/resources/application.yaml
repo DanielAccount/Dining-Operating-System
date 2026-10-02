@@ -5,6 +5,11 @@ spring:
   profiles:
     active: local
 
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -33,3 +38,7 @@ management:
     web:
       exposure:
         include: health,info,flyway
+
+app:
+  upload:
+    dir: uploads/menu-images

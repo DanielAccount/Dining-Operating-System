@@ -35,11 +35,18 @@ public class ModifierGroup extends AbstractTenantEntity {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    // Options have no explicit sort column, so order by id to keep the
+    // order the owner defined them in stable across reads.
     @OneToMany(mappedBy = "modifierGroup", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
     private List<ModifierOption> options = new ArrayList<>();
 
-    @OneToMany(mappedBy = "modifierGroup")
-    private List<MenuItemModifierGroup> menuItemLinks = new ArrayList<>();
-
+    // NOTE: there is deliberately no inverse collection for
+    // MenuItemModifierGroup here. The link table is always driven through
+    // MenuItemModifierGroupRepository / MenuItemService, and an unused
+    // @OneToMany(mappedBy) here would invite someone to cascade through it -
+    // deleting a group would then also try to delete the menu items attached
+    // to it. The "which items use this group?" question is answered by
+    // MenuItemModifierGroupRepository.findAllByModifierGroupId.
 
 }

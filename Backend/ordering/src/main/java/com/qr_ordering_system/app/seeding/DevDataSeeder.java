@@ -154,7 +154,7 @@ public class DevDataSeeder implements ApplicationRunner {
             Map<String, Role> roles = seedRoles(tenantId, permissionMap);
 
             Branch branch = new Branch();
-            branch.setTenant_id(tenantId); // FIXED: setTenantId (camelCase)
+            branch.setTenantId(tenantId); 
             branch.setName("Brew Cafe Main");
             branch.setAddress("Yangon");
             branch.setContactNumber("09000000001");
@@ -214,7 +214,7 @@ public class DevDataSeeder implements ApplicationRunner {
 
     private Branch createBranch(Long tenantId, String name, String address, String phone) {
         Branch b = new Branch();
-        b.setTenant_id(tenantId); // FIXED: setTenantId (camelCase)
+        b.setTenantId(tenantId); 
         b.setName(name);
         b.setAddress(address);
         b.setContactNumber(phone);
@@ -228,7 +228,7 @@ public class DevDataSeeder implements ApplicationRunner {
         Map<String, Role> result = new LinkedHashMap<>();
         DEFAULT_ROLES.forEach((roleName, codes) -> {
             Role role = new Role();
-            role.setTenant_id(tenantId); // FIXED: setTenantId (camelCase)
+            role.setTenantId(tenantId); 
             role.setName(roleName);
             role.setDescription(roleName + " default role");
             role.setPermissions(codes.stream().map(permissionMap::get).collect(Collectors.toSet()));
@@ -239,7 +239,7 @@ public class DevDataSeeder implements ApplicationRunner {
 
     private void seedUser(Long tenantId, Branch branch, Role role, String email, String username, String displayName) {
         User user = new User();
-        user.setTenant_id(tenantId); // FIXED: setTenantId (camelCase)
+        user.setTenantId(tenantId); 
         user.setBranch(branch);     // null => tenant-wide
         user.setRole(role);
         user.setUsername(username);

@@ -14,7 +14,16 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
     // For the menu management screen: ordered list for the UI
     List<Category> findAllByOrderByDisplayOrderAsc();
 
-    @Query("select coalesce(max(c.displayOrder), -1) from Category c")
+    /**
+     * Highest position currently in use, or 0 when the tenant has no categories.
+     *
+     * coalesce to 0 (not -1) because display_order is a 1-based dense sequence:
+     * "nothing yet" must report 0 so that appending produces position 1. This
+     * used to coalesce to -1, which handed the very first category created
+     * through the API position 0 - a value the update endpoint's @Positive
+     * validation then refused, so that category could never be renumbered.
+     */
+    @Query("select coalesce(max(c.displayOrder), 0) from Category c")
     int findMaxDisplayOrder();
 
     // Shift orders UP (increment display_order by +1) for range [from, to]

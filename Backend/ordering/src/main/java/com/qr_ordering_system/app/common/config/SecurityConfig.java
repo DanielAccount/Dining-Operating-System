@@ -36,6 +36,10 @@ public class SecurityConfig {
 
             http
                 .csrf(csrf -> csrf.disable())
+                // Must come before authorization: Spring Security answers CORS
+                // preflights here, otherwise an OPTIONS request is rejected with
+                // 401 by anyRequest().authenticated() before MVC can respond.
+                .cors(cors -> { })
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -55,7 +59,8 @@ public class SecurityConfig {
                                 "/actuator/flyway",
                                 "/error",
                                 "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/uploads/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

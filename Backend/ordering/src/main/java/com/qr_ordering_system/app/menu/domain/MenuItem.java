@@ -16,8 +16,8 @@ import java.util.Map;
 @Entity
 @Table(name = "menu_items", indexes = {
         @Index(name = "idx_menu_item_category", columnList = "category_id"),
-        @Index(name = "idx_menu_item_tenant_active", columnList = "tenant_id, is_active"),
-        @Index(name = "idx_menu_item_tenant_stock", columnList = "tenant_id, is_in_stock")
+        @Index(name = "idx_menu_item_category_order", columnList = "category_id, display_order"),
+        @Index(name = "idx_menu_item_tenant_active", columnList = "tenant_id, is_active")
 })
 @Getter @Setter
 public class MenuItem extends AbstractTenantEntity {
@@ -25,6 +25,14 @@ public class MenuItem extends AbstractTenantEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    /**
+     * Position within the owning category, 1-based and dense.
+     * Maintained by {@link com.qr_ordering_system.app.menu.service.MenuItemService}
+     * with shift queries, the same way categories.display_order works.
+     */
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder = 0;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "localized_names", columnDefinition = "jsonb", nullable = false)
@@ -41,9 +49,6 @@ public class MenuItem extends AbstractTenantEntity {
 
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
-
-    @Column(name = "is_in_stock", nullable = false)
-    private Boolean isInStock = true;
 
     @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("displayOrder ASC")

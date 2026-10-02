@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -17,4 +18,13 @@ public interface ModifierGroupRepository extends JpaRepository <ModifierGroup,Lo
                where mg.id = :id
                """)
     Optional<ModifierGroup> findWithOptionsById(@Param("id") Long id);
+
+    // Loads every group with its options in one query. Without this the
+    // mapper lazy-loads options per group (one extra query per group).
+    @Query("""
+               select distinct mg from ModifierGroup mg
+               left join fetch mg.options
+               order by mg.id asc
+               """)
+    List<ModifierGroup> findAllWithOptions();
 }

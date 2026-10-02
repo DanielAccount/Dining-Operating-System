@@ -67,7 +67,7 @@ public class AuthService {
                         "Invalid email or password"
                 ));
 
-        TenantContextHolder.setTenantId(user.getTenant_id());
+        TenantContextHolder.setTenantId(user.getTenantId());
 
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -85,7 +85,7 @@ public class AuthService {
             );
         }
 
-        Tenant tenant = tenantRepostory.findById(user.getTenant_id())
+        Tenant tenant = tenantRepostory.findById(user.getTenantId())
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.UNAUTHORIZED,
                         "Invalid email or password"
@@ -132,7 +132,7 @@ public class AuthService {
 
         String token  = jwtService.generateToken(
                 user.getId(),
-                user.getTenant_id(),
+                user.getTenantId(),
                 branchId,
                 user.getEmail(),
                 user.getUsername(),

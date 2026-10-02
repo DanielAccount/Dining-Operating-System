@@ -21,6 +21,9 @@ import java.util.Set;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     private final JwtService jwtService;
 
     public JwtAuthenticationFilter(JwtService jwtService) {
@@ -99,6 +102,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
 
                 } catch (Exception exception) {
+                    // A bad token is a normal event (expiry, tampering, a stale
+                    // session), not an error - the request simply continues
+                    // unauthenticated and the authorization rules answer 401.
+                    // It was previously swallowed completely, which made every
+                    // "my token is being rejected" report undiagnosable, so it is
+                    // logged at DEBUG for the expected expiry case and at WARN
+                    // with the cause for anything else.
+                    if (exception instanceof io.jsonwebtoken.ExpiredJwtException) {
+                        log.debug("Rejected expired bearer token");
+                    } else {
+                        log.warn("Rejected bearer token: {}", exception.getMessage());
+                    }
                     SecurityContextHolder.clearContext();
                     TenantContextHolder.clear();
                     BranchContextHolder.clear();
