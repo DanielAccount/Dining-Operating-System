@@ -17,6 +17,13 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.HashMap;
 import java.util.List;
 
+/**
+ * Create, read, update and delete for menu categories.
+ *
+ * <p>Like {@link MenuItemService}, this class only orchestrates; the display
+ * order arithmetic lives in {@link CategoryDisplayOrderManager} so the two stay
+ * readable side by side.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -24,35 +31,26 @@ public class CategoryService {
 
     private final CategoryRepository categoryRepository;
     private final MenuItemRepository menuItemRepository;
+    private final CategoryDisplayOrderManager displayOrder;
 
+    /**
+     * Adds a category at the end of, or at a chosen position in, the tenant's
+     * category list.
+     */
     public CategoryResponse create(CategoryCreateRequest request) {
         Category category = new Category();
         category.setLocalizedNames(new HashMap<>(request.localizedNames()));
-
-        int maxOrder = categoryRepository.findMaxDisplayOrder();
-
-        if (request.displayOrder() != null) {
-            // Insert at a specific position; clamp to [1, max+1]
-            int targetOrder = Math.max(1, Math.min(request.displayOrder(), maxOrder + 1));
-            // Shift existing items at or after targetOrder up by 1
-            categoryRepository.shiftOrdersUp(targetOrder, Integer.MAX_VALUE, -1L);
-            category.setDisplayOrder(targetOrder);
-        } else {
-            // No position requested — append at end. maxOrder is 0 for an empty
-            // tenant, so the very first category lands on position 1 and the
-            // 1-based dense sequence holds from the start.
-            category.setDisplayOrder(maxOrder + 1);
-        }
+        category.setDisplayOrder(displayOrder.positionForNewCategory(request.displayOrder()));
 
         return CategoryMapper.toResponse(categoryRepository.save(category));
     }
 
     public CategoryResponse getById(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        Category category = requireCategory(id);
         return CategoryMapper.toResponse(category);
     }
 
+    /** Every category in the tenant, in display order. */
     public List<CategoryResponse> getAll() {
         return categoryRepository.findAllByOrderByDisplayOrderAsc()
                 .stream()
@@ -60,41 +58,31 @@ public class CategoryService {
                 .toList();
     }
 
-    // NOTE: display-order reordering is not fully atomic under concurrent requests.
-    // The @Version optimistic lock protects the entity itself, but bulk @Modifying
-    // UPDATE queries bypass version checks. Acceptable for MVP menu management.
+    /**
+     * Applies an edit to an existing category: its name, and optionally a new
+     * position in the list.
+     */
     public CategoryResponse update(Long id, CategoryUpdateRequest request) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        Category category = requireCategory(id);
 
         category.setLocalizedNames(new HashMap<>(request.localizedNames()));
 
-        if (request.displayOrder() != null && !request.displayOrder().equals(category.getDisplayOrder())) {
-            int oldOrder = category.getDisplayOrder();
-            int newOrder = Math.max(1, request.displayOrder());
-            int maxOrder = categoryRepository.findMaxDisplayOrder();
-
-            if (newOrder > maxOrder) {
-                newOrder = maxOrder;
-            }
-
-            if (newOrder < oldOrder) {
-                // Moving UP (e.g., 3 -> 1): Shift items from newOrder to oldOrder-1 UP by +1
-                categoryRepository.shiftOrdersUp(newOrder, oldOrder, id);
-            } else if (newOrder > oldOrder) {
-                // Moving DOWN (e.g., 1 -> 3): Shift items from oldOrder+1 to newOrder DOWN by -1
-                categoryRepository.shiftOrdersDown(oldOrder, newOrder, id);
-            }
-
-            category.setDisplayOrder(newOrder);
+        if (request.displayOrder() != null) {
+            displayOrder.moveCategory(category, request.displayOrder());
         }
 
         return CategoryMapper.toResponse(categoryRepository.save(category));
     }
 
+    /**
+     * Deletes an empty category and closes the gap it leaves.
+     *
+     * <p>A category that still holds menu items is refused: deleting it would
+     * either orphan those items or silently delete them with it, and neither is
+     * something a single "Delete" click should do.
+     */
     public void delete(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+        Category category = requireCategory(id);
 
         if (menuItemRepository.countByCategory(category) > 0) {
             throw new ResponseStatusException(
@@ -102,16 +90,19 @@ public class CategoryService {
                     "Cannot delete category " + id + " because it still contains menu items");
         }
 
-        int deletedOrder = category.getDisplayOrder();
+        int deletedPosition = category.getDisplayOrder();
+
         categoryRepository.delete(category);
-        // Flush before renumbering, exactly as MenuItemService.delete does.
-        //
-        // @SoftDelete turns delete() into an UPDATE of is_deleted, and bulk
-        // @Modifying queries do not flush pending changes first. Without this the
-        // soft-delete has not been issued yet, so shiftOrdersAfterDelete would
-        // still see the deleted row and decrement its position too.
+
+        // Flush before renumbering. A soft delete is an UPDATE of the deleted
+        // flag and the bulk shift does not flush first, so without this the
+        // shift would still see the dying row and decrement its position too.
         categoryRepository.flush();
-        categoryRepository.shiftOrdersAfterDelete(deletedOrder);
+        displayOrder.closeGapAfterDelete(deletedPosition);
     }
 
+    private Category requireCategory(Long id) {
+        return categoryRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found: " + id));
+    }
 }

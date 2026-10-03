@@ -1,47 +1,147 @@
 <div class="flex items-center justify-between w-full">
     <div class="font-serif text-2xl tracking-tight text-stone-900 sm:text-1xl">
-        <h1 >Modifiers</h1>
+        <h1>Modifiers</h1>
     </div>
 
     <div>
-       <button class="btn btn-neutral"  onclick="modifiers_modal.showModal()">+ Create Modifier Group</button>
+        <button class="btn btn-neutral" (click)="openCreateModal()">+ Create Modifier Group</button>
     </div>
 </div>
 
+@if (listError) {
+    <div class="alert alert-error mt-4">
+        <span>{{ listError }}</span>
+    </div>
+}
+
+
+    <!-- Changed to 3 columns on medium, 4 on large, and 5 on extra-large screens -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full">
+        @for(modifier of modifiers; track modifier.id){
+          <div class="card bg-base-100 shadow-sm hover:shadow-md transition-shadow border border-base-200">
+        <div class="card-body p-5">
+            <!-- Header: Title & Action -->
+            <div class="flex items-center justify-between gap-2">
+                <h3 class="font-serif text-base font-semibold tracking-tight text-stone-900 truncate">
+                    {{modifier.localizedNames.en || modifier.localizedNames.mm}}
+                </h3>
+                
+                <div class="flex items-center gap-1">
+                    <button type="button" (click)="openEditModal(modifier)" aria-label="Edit modifier group" class="cursor-pointer p-1 rounded-md text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors focus:outline-none focus:ring-2 focus:ring-stone-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-edit">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" />
+                            <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415" />
+                            <path d="M16 5l3 3" />
+                        </svg>
+                    </button>
+                    <button type="button" (click)="deleteModifier(modifier)" aria-label="Delete modifier group" class="cursor-pointer p-1 rounded-md text-stone-400 hover:text-red-600 hover:bg-red-50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-trash">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 7l16 0" />
+                            <path d="M10 11l0 6" />
+                            <path d="M14 11l0 6" />
+                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Badges -->
+            <div class="flex flex-wrap items-center gap-1.5 mt-2">
+
+                @if(modifier.isRequired){
+                    <span class="badge badge-accent badge-sm font-medium cursor-pointer">Required</span>
+                }@else {
+                    <span class="badge badge-ghost badge-sm font-medium cursor-pointer">Optional</span>
+                }
+                <span class="badge badge-neutral badge-sm font-medium cursor-pointer">
+                    Select Min:{{modifier.minSelect}}/ Max:{{modifier.maxSelect}}
+                </span>
+            </div>
+
+            <!-- Tightened Divider Section -->
+            <hr class="border-t border-base-300 my-2.5" />
+
+            <!-- Options Section -->
+            <div class="space-y-2">
+                <span class="text-xs font-semibold tracking-wider text-stone-400 uppercase block">
+                    Options
+                </span>
+                <div class="flex flex-col gap-3">
+                      @for(option of modifier.options; track option.id){
+                    <div class="flex items-center justify-between gap-5">
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-sm font-medium tracking-tight text-stone-800 truncate">
+                                {{option.localizedNames.en}}
+                            </h4>
+                            @if(option.localizedNames.mm){
+                                <p class="text-xs text-base-content/60 font-normal truncate mt-0.5">
+                                    {{option.localizedNames.mm}}
+                                </p>
+                            }
+                           
+                        </div>
+
+                        <div class="shrink-0 text-right">
+                            <span class="text-sm font-medium text-stone-600">
+                                {{option.extraPrice}} MMk
+                            </span>
+                        </div>
+                    </div>
+                }
+                </div>
+             
+            </div>
+
+        </div>
+    </div>
+    } @empty {
+    <div class="col-span-full flex flex-col items-center justify-center py-20 text-stone-400">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18l-2 9H5L3 3z"/><path d="M8 21h8"/><path d="M12 12v3"/><circle cx="12" cy="12" r="5"/></svg>
+      <p class="mt-4 font-serif text-lg">No modifier groups found</p>
+      <p class="text-sm mt-1">Click "+ Create Modifier Group" to create your first one</p>
+    </div>
+  }
+ 
+</div>
 
 <!-- Modal -->
-<dialog id="modifiers_modal" class="modal">
-    <div class="modal-box bg-[#FBF9F6] text-[#191919]">
+<dialog id="modifiers_modal" class="modal" #modifiersDialog>
+    <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-2xl">
         <form method="dialog">
             <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
         </form>
-        <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">Add Modifier Group</h3>
+        <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">
+            {{ editingModifierId !== null ? 'Edit Modifier Group' : 'Add Modifier Group' }}
+        </h3>
         
-        <!-- Parent form uses space-y-4 to space out form-control groups -->
-        <form method="dialog" class="space-y-4 mt-4">
+        <form [formGroup]="modifierForm" (ngSubmit)="saveModifier()" class="space-y-4 mt-4">
             
             <!-- Group 1 -->
             <div class="form-control w-full">
                 <label class="label pb-1">
-                    <span class="label-text font-serif text-sm font-medium text-stone-700">Modifer Group Name</span>
+                    <span class="label-text font-serif text-sm font-medium text-stone-700">Modifier Group Name</span>
                 </label>
-
                 <input 
-                    type="text" placeholder="eg. Spiceness Level, Toppings, Add-ons etc.." 
-                    class="input input-bordered w-full bg-white rounded-lg" required 
+                    formControlName="englishName"
+                    type="text" 
+                    placeholder="eg. Spiciness Level" 
+                    class="input input-bordered w-full" 
                 />
             </div>
 
             <!-- Group 2 -->
             <div class="form-control w-full">
-                <label class="label" pb-1>
-                    <span class="font-serif text-2xl tracking-tight text-stone-700 text-sm ">အုပ်စု အမည် (မြန်မာ)</span>
+                <label class="label pb-1">
+                    <span class="label-text font-serif text-sm font-medium text-stone-700">အုပ်စု အမည် (မြန်မာ)</span>
                 </label>
-
                 <input 
+                    formControlName="myanmarName" 
                     type="text" 
-                    placeholder="အစပ်အဆာအဆင့် ၊ အပေါ်မှဖြူးရမည့်အရာမျာ ၊ အပိုဆောင်း အဆာပလာများ စသည်..." 
-                    class="input input-bordered w-full rounded-lg" required 
+                    placeholder="အစပ်အဆာအဆင့်" 
+                    class="input input-bordered w-full"
                 />
             </div>
 
@@ -52,7 +152,7 @@
                     <label class="label pb-1">
                         <span class="label-text font-serif text-sm font-medium text-stone-700">Required</span>
                     </label>
-                    <select class="select select-bordered bg-white rounded-lg w-full" required>
+                    <select formControlName="isRequired" class="select select-bordered bg-white rounded-lg w-full">
                         <option value="yes">Yes (Required)</option>
                         <option value="no">No (Optional)</option>
                     </select>
@@ -64,11 +164,11 @@
                         <span class="label-text font-serif text-sm font-medium text-stone-700">Min-Select</span>
                     </label>
                     <input
+                        formControlName="minSelect"
                         type="number"
                         min="0" 
                         placeholder="0" 
                         class="input input-bordered w-full bg-white rounded-lg" 
-                        required 
                     />
                 </div>
 
@@ -78,72 +178,104 @@
                         <span class="label-text font-serif text-sm font-medium text-stone-700">Max-Select</span>
                     </label>
                     <input
+                        formControlName="maxSelect"
                         type="number"
                         min="1" 
                         placeholder="1" 
                         class="input input-bordered w-full bg-white rounded-lg" 
-                        required 
                     />
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 w-full">
-                <div class="form-control w-full">
-                    <label class="label pb-1">
-                        <span class="label-text font-serif text-sm font-bold text-stone-700">Modifier Options</span>
-                    </label>
-                </div>
-
-                <div class="form-control w-full text-right">
-                    <label class="label pb-1 justify-end">
-                        <span class="label-text font-serif text-sm font-medium text-stone-700 cursor-pointer">+ Add Options</span>
-                    </label>
-                </div>
+            <!-- Modifier Options Header -->
+            <div class="flex justify-between items-center w-full pt-2">
+                <span class="label-text font-serif text-sm font-bold text-stone-700">Modifier Options</span>
+                <button 
+                    type="button" 
+                    class="label-text font-serif text-sm font-medium text-stone-700 cursor-pointer hover:underline"
+                    (click)="addOptionRow()"
+                >
+                    + Add Option
+                </button>
             </div>
 
-            <!-- Add Options -->
-             <div class="grid grid-cols-3 gap-4 w-full">
-                <div class="form-control w-full">
-                    <label class="label pb-1">
-                        <span class="label-text font-serif text-sm font-medium text-stone-700">New Option</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        placeholder="Normal Spice, Sweet..." 
-                        class="input input-bordered w-full rounded-lg" required 
-                    />
-                </div>
+            <!-- Dynamic Options FormArray -->
+            <div formArrayName="options" class="space-y-3 w-full">
+                @for (option of optionsArray.controls; track option; let i = $index) {
+                    <div [formGroupName]="i" class="flex items-center gap-2 w-full">
+                        <!-- English Name -->
+                        <div class="form-control flex-1">
+                            <input 
+                                formControlName="englishName"
+                                type="text" 
+                                placeholder="Normal Spice" 
+                                class="input input-bordered w-full rounded-lg" 
+                            />
+                        </div>
 
-                <div class="form-control w-full">
-                    <label class="label pb-1">
-                        <span class="label-text font-serif text-sm font-medium text-stone-700">ရွေးချယ်မှုအသစ်</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        placeholder="Normal Spice, Sweet..." 
-                        class="input input-bordered w-full rounded-lg" required 
-                    />
-                </div>
+                        <!-- Myanmar Name -->
+                        <div class="form-control flex-1">
+                            <input 
+                                formControlName="myanmarName"
+                                type="text" 
+                                placeholder="ပုံမှန်အစပ်" 
+                                class="input input-bordered w-full rounded-lg" 
+                            />
+                        </div>
 
-                <div class="form-control w-full">
-                    <label class="label pb-1">
-                        <span class="label-text font-serif text-sm font-medium text-stone-700">Price</span>
-                    </label>
-                    <input
-                        type="number"
-                        min="0" 
-                        placeholder="0" 
-                        class="input input-bordered w-full bg-white rounded-lg" 
-                        required 
-                    />
-                </div>
+                        <!-- Extra Price -->
+                        <div class="form-control w-28">
+                            <input
+                                formControlName="extraPrice"
+                                type="number"
+                                min="0" 
+                                placeholder="Price" 
+                                class="input input-bordered w-full bg-white rounded-lg" 
+                            />
+                        </div>
+
+                        <!-- Availability: an unavailable option stays on the
+                             menu but is hidden from customers, so the toggle has
+                             to round-trip through save rather than being a
+                             purely visual affordance. -->
+                        <label
+                            class="label cursor-pointer justify-center"
+                            [title]="option.get('isAvailable')?.value ? 'Available to customers' : 'Hidden from customers'"
+                        >
+                            <input
+                                type="checkbox"
+                                formControlName="isAvailable"
+                                class="checkbox checkbox-sm"
+                            />
+                        </label>
+
+                        <button 
+                            type="button" 
+                            class="btn btn-square btn-ghost btn-sm text-error" 
+                            (click)="removeOption(i)"
+                            [disabled]="optionsArray.length === 1"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                }
             </div>
 
-            
+            @if (saveError) {
+                <div class="alert alert-error">
+                    <span>{{ saveError }}</span>
+                </div>
+            }
+
             <!-- Actions -->
-            <div class="modal-action pt-2">
-                <button class="btn btn-ghost" type="button" onclick="category_modal.close()">Cancel</button>
-                <button class="btn btn-neutral" type="submit">Save Category</button>
+            <div class="modal-action pt-4">
+                <button class="btn btn-ghost" type="button" (click)="closeModal()">Cancel</button>
+                <button class="btn btn-neutral" type="submit" [disabled]="isSaving">
+                    @if (isSaving) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                    }
+                    {{ editingModifierId !== null ? 'Update Modifier' : 'Save Modifier' }}
+                </button>
             </div>
         </form>
     </div>

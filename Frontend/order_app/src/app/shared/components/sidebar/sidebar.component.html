@@ -1,68 +1,128 @@
 <div class="drawer lg:drawer-open">
   <input id="my-drawer-4" type="checkbox" class="drawer-toggle" />
-  
-  <div class="drawer-content">
-    <!-- Navbar -->
-    <nav class="navbar w-full bg-oklch(44.6% 0.03 256.802)">
 
-      <div class="navbar-start flex items-center">
-        <label for="my-drawer-4" aria-label="open sidebar" class="btn btn-square btn-ghost">
-          <!-- Sidebar toggle icon -->
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor" class="my-1.5 inline-block size-4"><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M9 4v16"></path><path d="M14 10l2 2l-2 2"></path></svg>
+  <div class="drawer-content flex flex-col">
+    <!-- Navbar -->
+    <nav class="navbar w-full bg-oklch(50.6% 0.03 256.802) px-2 sm:px-4 flex items-center justify-between gap-2">
+
+      <!-- Navbar Start: Drawer Toggle & Brand Title -->
+      <div class="flex items-center gap-1 sm:gap-2 min-w-0">
+        <label for="my-drawer-4" aria-label="open sidebar" class="btn btn-square btn-ghost btn-sm sm:btn-md shrink-0">
+          <!-- Sidebar Toggle Icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-linejoin="round" stroke-linecap="round" stroke-width="2" fill="none" stroke="currentColor" class="size-5"><path d="M4 4m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M9 4v16"></path><path d="M14 10l2 2l-2 2"></path></svg>
         </label>
 
-        <div class="px-4 font-serif text-lg font-medium tracking-tight text-stone-900 sm:text-1xl">
+        <div class="font-serif text-base sm:text-lg font-medium tracking-tight text-stone-900 truncate">
           {{ authService.businessName() }}
         </div>
       </div>
 
-      <div class="navbar-end flex items-center gap-4">
-        <span class="badge badge-lg badge-outline font-serif text-md items-center tracking-tight text-stone-900 sm:text-1xl">
-          {{ authService.currentRole() }}
-        </span>
+      <!-- Navbar End: Controls -->
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <!-- Branch indicator: three mutually exclusive states.
+             1. loading  - skeleton, no layout jump
+             2. picker   - tenant-wide user holding BRANCH_VIEW with 2+ branches
+             3. plain label - a single-branch tenant, or branch-scoped staff
+                 (manager, cashier, waiter, chef) whose token pins the branch,
+                 so offering them a picker would be a lie the server ignores. -->
+        @if (branchContext.loading()) {
+          <div class="h-8 w-32 rounded-full skeleton bg-neutral-800"></div>
 
-        <button class="btn btn-neutral" (click)="onLogout()">Logout</button>  
+        } @else if (branchContext.hasBranchChoice()) {
+          <div class="flex h-8 sm:h-9 items-center rounded-full border border-neutral-800 bg-neutral-900 px-2 sm:px-3 text-neutral-100 shadow-sm">
+            <!-- Store Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="mr-1 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m16 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-4 0h4" />
+            </svg>
+
+            <select
+              aria-label="Active branch"
+              class="appearance-none bg-transparent pr-4 sm:pr-6 text-[11px] sm:text-xs font-medium text-white focus:outline-none cursor-pointer"
+              [value]="branchContext.selectedBranchId() ?? ''"
+              (change)="onBranchChange($event)"
+            >
+              @for (branch of branchContext.branches(); track branch.id) {
+                <option [value]="branch.id" class="bg-neutral-900 text-white">{{ branch.name }}</option>
+              }
+            </select>
+
+            <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none -ml-3 sm:-ml-4 h-3 w-3 sm:h-3.5 sm:w-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
+        } @else if (branchContext.selectedBranch(); as branch) {
+          <div class="flex h-8 sm:h-9 items-center gap-1.5 sm:gap-2 rounded-full border border-neutral-800 bg-neutral-900 px-2 sm:px-3 text-neutral-100 shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m16 0h2m-2 0h-5m-9 0H3m2 0h5m0 0v-5a2 2 0 012-2h2a2 2 0 012 2v5m-4 0h4" />
+            </svg>
+            <span class="text-[11px] sm:text-xs font-medium truncate max-w-[160px] sm:max-w-[220px]" [title]="branch.name">{{ branch.name }}</span>
+          </div>
+
+        } @else if (branchContext.loadStateError; as errorMessage) {
+          <span class="text-[11px] sm:text-xs text-error whitespace-nowrap" [title]="errorMessage">{{ errorMessage }}</span>
+        }
+
+        <!-- Language Switcher Toggle -->
+        <div class="flex items-center rounded-full border border-stone-700 p-0.5 sm:p-1">
+          <button 
+            type="button"
+            (click)="selectedLanguage = 'en'"
+            [class]="selectedLanguage === 'en' 
+              ? 'rounded-full bg-black px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white transition-all' 
+              : 'px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-stone-400 hover:text-stone-200 transition-all'">
+            EN
+          </button>
+          
+          <button 
+            type="button"
+            (click)="selectedLanguage = 'my'"
+            [class]="selectedLanguage === 'my' 
+              ? 'rounded-full bg-black px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-semibold text-white transition-all' 
+              : 'px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-stone-400 hover:text-stone-200 transition-all'">
+            မြန်မာ
+          </button>
+        </div>
+
+        <!-- Logout Button -->
+        <button class="btn btn-neutral btn-xs sm:btn-sm" (click)="onLogout()">Logout</button>  
       </div>
-    
+
     </nav>
     
-    <!-- Page content here -->
-    <div class="p-4">
+    <!-- Page Content -->
+    <div class="p-4 grow">
       <router-outlet></router-outlet>
     </div>
   </div>
 
-  <div class="drawer-side is-drawer-close:overflow-visible">
+  <!-- Sidebar Container -->
+  <div class="drawer-side z-40 lg:is-drawer-close:overflow-visible">
     <label for="my-drawer-4" aria-label="close sidebar" class="drawer-overlay"></label>
-    <div class="flex min-h-full flex-col items-start bg-oklch(44.6% 0.03 256.802) is-drawer-close:w-14 is-drawer-open:w-64">
-      <!-- Sidebar content here -->
+    <div class="flex min-h-full flex-col items-start bg-oklch(44.6% 0.03 256.802) w-64 lg:is-drawer-close:w-14 lg:is-drawer-open:w-64 transition-all">
 
-       <!-- 0. User Profile Section -->
-    <div class="flex items-center gap-3 p-4 w-full border-b border-stone-300/20 mb-2 is-drawer-close:p-2 is-drawer-close:justify-center is-drawer-close:gap-0">
-      <div class="w-10 h-10 rounded-full bg-stone-300/20 flex items-center justify-center text-stone-900 shrink-0">
-        <!-- User Icon SVG -->
-       <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-circle">
-        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-        <path d="M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-        <path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" />
-      </svg>
+      <!-- 0. User Profile Section -->
+      <div class="flex items-center gap-3 p-4 w-full border-b border-stone-300/20 mb-2 lg:is-drawer-close:p-2 lg:is-drawer-close:justify-center lg:is-drawer-close:gap-0">
+        <div class="w-10 h-10 rounded-full bg-stone-300/20 flex items-center justify-center text-stone-900 shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-circle">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+            <path d="M9 10a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+            <path d="M6.168 18.849a4 4 0 0 1 3.832 -2.849h4a4 4 0 0 1 3.834 2.855" />
+          </svg>
+        </div>
+        <div class="lg:is-drawer-close:hidden flex flex-col leading-tight">
+          <span class="font-medium text-sm truncate max-w-[140px]">{{authService.displayName()}}</span>
+          <span class="text-xs opacity-70 truncate max-w-[140px]">{{ authService.currentRole() }}</span>
+        </div>
       </div>
-      <div class="is-drawer-close:hidden flex flex-col leading-tight">
-        <!-- Replace authService.userName() with your actual property if different -->
-        <span class="font-medium text-sm truncate max-w-[140px]">{{authService.displayName()}}</span>
-        <span class="text-xs opacity-70 truncate max-w-[140px]">Role</span>
-      </div>
-    </div>
 
-
+      <!-- Navigation Menu -->
       <ul class="menu w-full grow">
-        
-        <!-- 1. Diner Storefront (No permission required) -->
         <li *appHasPermission="'MENU_VIEW'">
           <a routerLink="store" routerLinkActive="active" 
-             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Diner Storefront">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store">
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Diner Storefront">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
               <path d="M3 21l18 0" />
               <path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" />
@@ -70,71 +130,66 @@
               <path d="M19 21l0 -10.15" />
               <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" />
             </svg>
-            <span class="is-drawer-close:hidden">Diner Storefront</span>
+            <span class="lg:is-drawer-close:hidden">Diner Storefront</span>
           </a>
         </li>
 
-        <!-- 2. Financial Dashboard (Requires REPORT_VIEW) -->
         <li *appHasPermission="'REPORT_VIEW'">
           <a routerLink="/management/dashboard" routerLinkActive="active" 
-             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Financial Dashboard">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-report-money">
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Financial Dashboard">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
               <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
               <path d="M9 5a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2" />
               <path d="M14 11h-2.5a1.5 1.5 0 0 0 0 3h1a1.5 1.5 0 0 1 0 3h-2.5" />
               <path d="M12 17v1m0 -8v1" />
             </svg>
-            <span class="is-drawer-close:hidden">Financial Dashboard</span>
+            <span class="lg:is-drawer-close:hidden">Financial Dashboard</span>
           </a>
         </li>
 
-        <!-- 3. Manage Menu (Requires MENU_EDIT) -->
         <li *appHasPermission="'MENU_MANAGE'">
           <a routerLink="/management/menu_management" routerLinkActive="active" 
-             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Manage Menu">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-tools-kitchen-3">
-            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-            <path d="M7 4v17m-3 -17v3a3 3 0 1 0 6 0v-3" />
-            <path d="M14 8a3 4 0 1 0 6 0a3 4 0 1 0 -6 0" />
-            <path d="M17 12v9" />
-          </svg>
-            <span class="is-drawer-close:hidden">Menu Management</span>
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Manage Menu">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path d="M7 4v17m-3 -17v3a3 3 0 1 0 6 0v-3" />
+              <path d="M14 8a3 4 0 1 0 6 0a3 4 0 1 0 -6 0" />
+              <path d="M17 12v9" />
+            </svg>
+            <span class="lg:is-drawer-close:hidden">Menu Management</span>
           </a>
         </li>
 
-        <!-- 4. Role & Checkbox Matrix (Requires USER_MANAGE) -->
         <li *appHasPermission="'USER_MANAGE'">
           <a routerLink="/management/user_manage" routerLinkActive="active" 
-            class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="User Management">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-edit">
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="User Management">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
               <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
               <path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" />
               <path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39" />
             </svg>
-            <span class="is-drawer-close:hidden">User Management</span>
+            <span class="lg:is-drawer-close:hidden">User Management</span>
           </a>
         </li>
 
-          <!-- 5. Kitchen Management (Requires KDS_VIEW) -->
         <li *appHasPermission="'KDS_VIEW'">
           <a routerLink="/management/kitchen_display" routerLinkActive="active" 
-             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Kitchen Management">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chef-hat">
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Kitchen Management">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
               <path d="M12 3c1.918 0 3.52 1.35 3.91 3.151a4 4 0 0 1 2.09 7.723l0 7.126h-12v-7.126a4 4 0 1 1 2.092 -7.723a4 4 0 0 1 3.908 -3.151" />
               <path d="M6.161 17.009l11.839 -.009" />
             </svg>
-            <span class="is-drawer-close:hidden">Kitchen Display</span>
+            <span class="lg:is-drawer-close:hidden">Kitchen Display</span>
           </a>
         </li>
 
-         <!-- Payments (Requires PAYMENT_VIEW) -->
-         <li *appHasPermission="'PAYMENT_VIEW'">
+        <li *appHasPermission="'PAYMENT_VIEW'">
           <a routerLink="/management/payments" routerLinkActive="active" 
-             class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="Payments">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-cash-register">
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Payments">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
               <path d="M21 15h-2.5c-.398 0 -.779 .158 -1.061 .439c-.281 .281 -.439 .663 -.439 1.061c0 .398 .158 .779 .439 1.061c.281 .281 .663 .439 1.061 .439h1c.398 0 .779 .158 1.061 .439c.281 .281 .439 .663 .439 1.061c0 .398 -.158 .779 -.439 1.061c-.281 .281 -.663 .439 -1.061 .439h-2.5" />
               <path d="M19 21v1m0 -8v1" />
@@ -145,10 +200,9 @@
               <path d="M12 13.99v.01" />
               <path d="M12 17v.01" />
             </svg>
-            <span class="is-drawer-close:hidden">Payments</span>
+            <span class="lg:is-drawer-close:hidden">Payments</span>
           </a>
         </li>
-
       </ul>
     </div>
   </div>

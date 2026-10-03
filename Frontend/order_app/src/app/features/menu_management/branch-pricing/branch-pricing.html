@@ -1,0 +1,145 @@
+<div class="flex items-center justify-between w-full mb-6">
+  <div class="font-serif text-2xl tracking-tight text-stone-900">
+    <h1>Branch Pricing & Availability</h1>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <!-- Branch selector: only for tenant-wide users (owner) -->
+    @if (isTenantWide() && branches().length > 0) {
+      <select
+        class="select select-bordered select-sm"
+        [ngModel]="selectedBranchId()"
+        (ngModelChange)="selectBranch($event)"
+      >
+        @for (branch of branches(); track branch.id) {
+          <option [ngValue]="branch.id">{{ branch.name }}</option>
+        }
+      </select>
+    } @else if (branches().length > 0) {
+      <span class="badge badge-outline">{{ branches()[0].name }}</span>
+    }
+
+    <button
+      class="btn btn-primary btn-sm"
+      [disabled]="!hasChanges() || saving()"
+      (click)="saveAll()"
+    >
+      {{ saving() ? 'Saving…' : 'Save All Changes' }}
+    </button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error mb-4">
+    <span>{{ error() }}</span>
+  </div>
+}
+
+@if (successMessage()) {
+  <div class="alert alert-success mb-4">
+    <span>{{ successMessage() }}</span>
+  </div>
+}
+
+@if (loading()) {
+  <div class="flex justify-center p-10">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
+} @else if (selectedBranchId() == null) {
+  <div class="text-center text-stone-500 p-10">
+    No branch selected.
+  </div>
+} @else if (rows().length === 0) {
+  <div class="text-center text-stone-500 p-10">
+    No menu items yet. Create products first.
+  </div>
+} @else {
+  <div class="overflow-x-auto">
+    <table class="table">
+      <!-- head -->
+      <thead>
+        <tr>
+          <th>Item Name</th>
+          <th>Global Base Price</th>
+          <th>Selected or Current Branch Price</th>
+          <th>Branch Availability</th>
+          <th>Stock</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.menuItemId) {
+          <tr>
+            <td>
+              {{ row.localizedNames.en ?? row.localizedNames.mm ?? '—' }}
+              <div class="text-xs text-stone-400">
+                {{ row.category.localizedNames.en ?? '' }}
+              </div>
+            </td>
+            <td>{{ formatPrice(row.basePrice) }}</td>
+            <td>
+              <input
+                type="number"
+                class="input input-bordered input-sm w-32"
+                [class.input-error]="isPriceInvalid(row)"
+                [placeholder]="formatPrice(row.basePrice)"
+                [ngModel]="row.priceInput"
+                (ngModelChange)="onPriceInput(row, $event)"
+                min="0"
+              />
+              <div class="text-xs text-stone-400 mt-1">
+                @if (row.priceOverride != null) {
+                  Override · effective {{ formatPrice(row.effectivePrice) }}
+                } @else {
+                  Using base price
+                }
+              </div>
+            </td>
+            <td>
+              <label class="label cursor-pointer justify-start gap-2">
+                <input
+                  type="checkbox"
+                  class="toggle"
+                  [ngModel]="row.isAvailable"
+                  (ngModelChange)="onAvailabilityToggle(row, $event)"
+                />
+                <span class="label-text">{{ row.isAvailable ? 'Offered' : 'Not offered' }}</span>
+              </label>
+            </td>
+            <td>
+              <!--
+                Stock is per branch: this kitchen ran out, not the whole chain.
+                Distinct from Availability - a sold-out item stays on the
+                customer menu greyed out, while "not offered" hides it.
+              -->
+              <label class="label cursor-pointer justify-start gap-2"
+                     [class.opacity-50]="!row.isAvailable">
+                <input
+                  type="checkbox"
+                  class="toggle toggle-success"
+                  [disabled]="!row.isAvailable"
+                  [ngModel]="row.isInStock"
+                  (ngModelChange)="onStockToggle(row, $event)"
+                />
+                <span class="label-text">{{ row.isInStock ? 'In stock' : 'Sold out' }}</span>
+              </label>
+              @if (!row.isAvailable) {
+                <div class="text-xs text-stone-400 mt-1">Hidden from customers</div>
+              } @else if (!row.isOrderable) {
+                <div class="text-xs text-amber-600 mt-1">Shown greyed out</div>
+              }
+            </td>
+            <td class="whitespace-nowrap">
+              @if (row.dirty) {
+                <button class="btn btn-primary btn-xs mr-1" (click)="saveRow(row)">Save</button>
+              }
+              @if (row.branchMenuItemId != null || row.dirty) {
+                <button class="btn btn-ghost btn-xs" (click)="resetRow(row)">Reset</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

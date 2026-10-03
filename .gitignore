@@ -1,0 +1,43 @@
+# ── Build output ──────────────────────────────────────────────
+target/
+Backend/ordering/target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# ── Dependencies ──────────────────────────────────────────────
+node_modules/
+Frontend/node_modules/
+Frontend/order_app/node_modules/
+
+# ── Frontend build output ─────────────────────────────────────
+dist/
+Frontend/order_app/dist/
+.angular/
+
+# ── User-uploaded files ───────────────────────────────────────
+# Menu images live outside git: they are runtime data, they grow without
+# bound, and they are reproducible from the app itself.
+Backend/ordering/uploads/
+uploads/
+*.log
+
+# ── Local config & secrets ────────────────────────────────────
+# application-local.yaml is committed for convenience, but never commit a
+# real JWT secret, DB password or API key. Use env vars instead.
+.env
+.env.*
+!.env.example
+application-prod.yaml
+application-local-override.yaml
+secrets/
+
+# ── IDE / OS ──────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.DS_Store
+Thumbs.db

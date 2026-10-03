@@ -4,112 +4,391 @@
   </div>
 
   <div>
-    <button type="button" class="btn btn-neutral" (click)="openModal()">+ New Menu Item</button>
+    <button type="button" class="btn btn-neutral" (click)="openCreateModal()">+ New Menu Item</button>
   </div>
 </div>
 
+@if (listError()) {
+  <div class="alert alert-error text-sm mb-4" role="alert">
+    <span>{{ listError() }}</span>
+  </div>
+}
+
+<!-- Product Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+  @for (product of products(); track product.id) {
+
+    <div class="card bg-base-100 w-full max-w-sm shadow-sm overflow-hidden border border-stone-200/80 rounded-xl">
+
+      <!-- Image -->
+      <figure class="w-full aspect-video bg-stone-100">
+        @if (product.imageUrl) {
+          <img
+            [src]="product.imageUrl | imageUrl"
+            [alt]="product.localizedNames.en ?? 'menu item'"
+            loading="lazy"
+            class="w-full h-full object-cover" />
+        } @else {
+          <div class="w-full h-full flex items-center justify-center text-stone-300">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+          </div>
+        }
+      </figure>
+
+      <!-- Body -->
+      <div class="card-body p-5 gap-3">
+        <!-- Title + Price -->
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <h2 class="font-serif text-lg font-bold tracking-tight text-stone-900 leading-snug">
+              {{ product.localizedNames.en }}
+            </h2>
+            @if (product.localizedNames.mm) {
+              <p class="font-serif text-xs font-normal text-stone-500 mt-0.5">
+                {{ product.localizedNames.mm }}
+              </p>
+            }
+          </div>
+          <span class="font-serif text-base font-bold text-stone-900 whitespace-nowrap bg-stone-100 px-2.5 py-1 rounded-md">
+            {{ formatPrice(product.basePrice) }} MMK
+          </span>
+        </div>
+
+        <!-- Category Badge + position -->
+        <div class="flex items-center gap-1.5">
+          <span class="badge badge-outline badge-sm border-stone-300 text-stone-500 text-xs">
+            {{ product.category.localizedNames.en }}
+          </span>
+          <span class="badge badge-ghost badge-sm bg-stone-100 text-stone-500 text-xs"
+                title="Position within {{ product.category.localizedNames.en }}">
+            #{{ product.displayOrder }}
+          </span>
+        </div>
+
+        <!-- Description -->
+        @if (product.localizedDescriptions.en) {
+          <p class="text-xs text-stone-600 leading-relaxed line-clamp-2">
+            {{ product.localizedDescriptions.en }}
+          </p>
+        }
+
+        <!-- Modifier Badges -->
+        @if (product.modifierGroups.length) {
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            @for (mg of product.modifierGroups; track mg.modifierGroupId) {
+              <span class="badge badge-subtle badge-sm bg-amber-50 text-amber-800 border-amber-200/60 font-medium">
+                + {{ mg.modifierGroupLocalizedNames.en }}
+              </span>
+            }
+          </div>
+        }
+
+        <!-- Divider -->
+        <div class="my-1 border-t border-stone-200/60"></div>
+
+        <!-- Footer: Availability & Actions -->
+        <div class="flex items-center justify-between pt-0.5">
+          <!--
+            Retire toggle. Stock is NOT here on purpose: "out of stock" is a
+            per-branch fact and lives in Branch Pricing, where each branch
+            manages its own kitchen.
+          -->
+          <label class="flex items-center gap-2 cursor-pointer select-none"
+                 [title]="product.isActive ? 'Visible on customer menus' : 'Retired: hidden from customer menus'">
+            <input
+              type="checkbox"
+              [checked]="product.isActive"
+              class="toggle toggle-sm toggle-success"
+              (change)="toggleActive(product, $any($event.target).checked)"
+            />
+            <span class="text-xs font-medium text-stone-700">
+              {{ product.isActive ? 'Active' : 'Retired' }}
+            </span>
+          </label>
+
+          <div class="flex items-center gap-1">
+            <!-- Edit -->
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs btn-square text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+              aria-label="Edit item"
+              (click)="openEditModal(product)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415"/><path d="M16 5l3 3"/></svg>
+            </button>
+
+            <!-- Delete -->
+            <button
+              type="button"
+              class="btn btn-ghost btn-xs btn-square text-stone-400 hover:text-red-600 hover:bg-red-50"
+              aria-label="Delete item"
+              (click)="openDeleteConfirm(product)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0"/><path d="M10 11l0 6"/><path d="M14 11l0 6"/><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"/><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  } @empty {
+    <div class="col-span-full flex flex-col items-center justify-center py-20 text-stone-400">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18l-2 9H5L3 3z"/><path d="M8 21h8"/><path d="M12 12v3"/><circle cx="12" cy="12" r="5"/></svg>
+      <p class="mt-4 font-serif text-lg">No menu items yet</p>
+      <p class="text-sm mt-1">Click "+ New Menu Item" to create your first one</p>
+    </div>
+  }
+</div>
+
+<!-- Create / Edit Modal -->
 <dialog #productModal id="product_modal" class="modal">
-  <div class="modal-box bg-[#FBF9F6] text-[#191919]">
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-2xl">
     <button type="button" (click)="closeModal()" class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-    <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">Create New Menu Item</h3>
+    <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">
+      {{ editingProductId ? 'Edit Menu Item' : 'Create New Menu Item' }}
+    </h3>
 
     <form [formGroup]="productForm" (ngSubmit)="saveProduct()" class="space-y-4 mt-4">
 
-      <!-- Select Category -->
+      <!-- Category -->
       <div class="form-control w-full">
         <label class="label pb-1">
           <span class="label-text font-serif text-sm font-medium text-stone-700">Choose Category</span>
         </label>
         <select formControlName="categoryId" class="select select-bordered w-full bg-white rounded-lg">
-          <option value="" disabled>Select a category</option>
+          <option [ngValue]="null" disabled>Select a category</option>
           @for (cat of categories(); track cat.id) {
-            <option [value]="cat.id">{{ cat.localizedNames.en }}</option>
+            <option [ngValue]="cat.id">{{ cat.localizedNames.en }}</option>
           }
         </select>
+        @if (productForm.controls.categoryId.touched && productForm.controls.categoryId.invalid) {
+          <p class="text-xs text-red-600 mt-1">Please choose a category.</p>
+        }
       </div>
 
-      <!-- Item Name (English) -->
-      <div class="form-control w-full">
-        <label class="label pb-1">
-          <span class="label-text font-serif text-sm font-medium text-stone-700">Item Name (English)</span>
-        </label>
-        <input
-          type="text"
-          formControlName="name"
-          placeholder="eg. Shan Noodle"
-          class="input input-bordered w-full rounded-lg"
-        />
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Name EN -->
+        <div class="form-control w-full">
+          <label class="label pb-1">
+            <span class="label-text font-serif text-sm font-medium text-stone-700">Item Name (English)</span>
+          </label>
+          <input
+            type="text"
+            formControlName="nameEn"
+            placeholder="e.g. Shan Noodle"
+            class="input input-bordered w-full rounded-lg"
+          />
+          @if (productForm.controls.nameEn.touched && productForm.controls.nameEn.invalid) {
+            <p class="text-xs text-red-600 mt-1">Name is required.</p>
+          }
+        </div>
+
+        <!-- Name MM -->
+        <div class="form-control w-full">
+          <label class="label pb-1">
+            <span class="label-text font-serif text-sm font-medium text-stone-700">မေနူး အမည် (မြန်မာ)</span>
+          </label>
+          <input
+            type="text"
+            formControlName="nameMm"
+            placeholder="e.g. ရှမ်းခေါက်ဆွဲ"
+            class="input input-bordered w-full rounded-lg"
+          />
+        </div>
       </div>
 
-      <!-- Item Name (Myanmar) -->
-      <div class="form-control w-full">
-        <label class="label pb-1">
-          <span class="label-text font-serif text-sm font-medium text-stone-700">မေနူး အမည် (မြန်မာ)</span>
-        </label>
-        <input
-          type="text"
-          formControlName="myanmarName"
-          placeholder="eg. ရှမ်းခေါက်ဆွဲ"
-          class="input input-bordered w-full rounded-lg"
-        />
-      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Price -->
+        <div class="form-control w-full">
+          <label class="label pb-1">
+            <span class="label-text font-serif text-sm font-medium text-stone-700">Base Price (MMK)</span>
+          </label>
+          <input
+            type="number"
+            formControlName="price"
+            min="0"
+            placeholder="0"
+            class="input input-bordered w-full bg-white rounded-lg"
+          />
+          @if (productForm.controls.price.touched && productForm.controls.price.invalid) {
+            <p class="text-xs text-red-600 mt-1">Enter a price of 0 or more.</p>
+          }
+        </div>
 
-      <!-- Base Price -->
-      <div class="form-control w-full">
-        <label class="label pb-1">
-          <span class="label-text font-serif text-sm font-medium text-stone-700">Base Price (MMK)</span>
-        </label>
-        <input
-          type="number"
-          formControlName="price"
-          min="0"
-          placeholder="0"
-          class="input input-bordered w-full bg-white rounded-lg"
-        />
+        <!-- Position within category -->
+        <div class="form-control w-full">
+          <label class="label pb-1">
+            <span class="label-text font-serif text-sm font-medium text-stone-700">Position</span>
+          </label>
+          <input
+            type="number"
+            formControlName="displayOrder"
+            min="1"
+            placeholder="1"
+            class="input input-bordered w-full bg-white rounded-lg"
+          />
+          <p class="text-xs text-stone-500 mt-1">
+            Order within the selected category. Out of range values snap to the nearest end.
+          </p>
+          @if (productForm.controls.displayOrder.touched && productForm.controls.displayOrder.invalid) {
+            <p class="text-xs text-red-600 mt-1">Position must be 1 or more.</p>
+          }
+        </div>
       </div>
 
       <!-- Image Upload -->
       <div class="form-control w-full">
-        <label class="label pb-1">
-          <span class="label-text font-serif text-sm font-medium text-stone-700">Image URL</span>
+        <label class="label pb-1" for="product-image-input">
+          <span class="label-text font-serif text-sm font-medium text-stone-700">Item Image</span>
         </label>
-        <input
-          type="text"
-          formControlName="imageUrl"
-          placeholder="https://example.com/image.jpg"
-          class="input input-bordered w-full rounded-lg"
-        />
+
+        <div class="flex items-start gap-4">
+          <!-- Preview -->
+          <div class="w-24 h-24 rounded-lg border border-stone-200 bg-stone-50 overflow-hidden flex-shrink-0 flex items-center justify-center">
+            @if (imagePreviewUrl()) {
+              <img
+                [src]="imagePreviewUrl() | imageUrl"
+                alt="Image preview"
+                class="w-full h-full object-cover" />
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+            }
+          </div>
+
+          <!-- Controls -->
+          <div class="flex flex-col gap-2 flex-1">
+            <input
+              #imageInput
+              id="product-image-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              [disabled]="uploadingImage()"
+              (change)="onFileSelected($event)"
+              class="file-input file-input-bordered file-input-sm w-full rounded-lg" />
+            <p class="text-xs text-stone-400">JPEG, PNG, WebP or GIF. Max 5 MB.</p>
+
+            @if (imageError()) {
+              <p class="text-xs text-red-600" role="alert">{{ imageError() }}</p>
+            }
+
+            @if (imagePreviewUrl()) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-xs text-red-500 hover:text-red-700 hover:bg-red-50 self-start"
+                [disabled]="uploadingImage()"
+                (click)="removeImage()">
+                ✕ Remove image
+              </button>
+            }
+
+            @if (uploadingImage()) {
+              <div class="flex items-center gap-2 text-xs text-stone-500">
+                <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+                Uploading image...
+              </div>
+            }
+          </div>
+        </div>
+
+        <input type="hidden" formControlName="imageUrl" />
       </div>
 
-      <!-- English Description -->
-      <div class="form-control w-full">
-        <label class="label pb-1">
-          <span class="label-text font-serif text-sm font-medium text-stone-700">Description (English)</span>
-        </label>
-        <textarea
-          formControlName="descriptionEn"
-          placeholder="English Food Description..."
-          class="textarea textarea-bordered w-full bg-white rounded-lg h-24"
-        ></textarea>
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Description EN -->
+        <div class="form-control w-full">
+          <label class="label pb-1">
+            <span class="label-text font-serif text-sm font-medium text-stone-700">Description (English)</span>
+          </label>
+          <textarea
+            formControlName="descriptionEn"
+            placeholder="English food description..."
+            class="textarea textarea-bordered w-full bg-white rounded-lg h-24"
+          ></textarea>
+        </div>
+
+        <!-- Description MM -->
+        <div class="form-control w-full">
+          <label class="label pb-1">
+            <span class="label-text font-serif text-sm font-medium text-stone-700">အသေးစိတ် ဖော်ပြချက် (မြန်မာ)</span>
+          </label>
+          <textarea
+            formControlName="descriptionMm"
+            placeholder="အသေးစိတ် ဖော်ပြချက် (မြန်မာ)..."
+            class="textarea textarea-bordered w-full bg-white rounded-lg h-24"
+          ></textarea>
+        </div>
       </div>
 
-      <!-- Myanmar Description -->
+      <!-- Modifier Groups -->
       <div class="form-control w-full">
-        <label class="label pb-1">
-          <span class="label-text font-serif text-sm font-medium text-stone-700">အသေးစိတ် ဖော်ပြချက် (မြန်မာ)</span>
-        </label>
-        <textarea
-          formControlName="descriptionMm"
-          placeholder="အသေးစိတ် ဖော်ပြချက် (မြန်မာ)..."
-          class="textarea textarea-bordered w-full bg-white rounded-lg h-24"
-        ></textarea>
+        <h3 class="label-text font-serif text-sm font-medium text-stone-700 mb-2">
+          Attach Modifier Groups
+        </h3>
+        <div class="flex flex-col gap-2">
+          @for (mg of modifierGroups(); track mg.id) {
+            <label class="label justify-start gap-3 cursor-pointer rounded-lg border border-stone-200 p-3 hover:bg-stone-50 transition-colors">
+              <input
+                type="checkbox"
+                class="checkbox checkbox-sm checkbox-primary"
+                [checked]="isModifierSelected(mg.id)"
+                (change)="toggleModifier(mg.id, $any($event.target).checked)"
+              />
+              <div>
+                <span class="label-text text-stone-800 font-medium">{{ mg.localizedNames.en }}</span>
+                <span class="text-xs text-stone-400 ml-2">
+                  {{ mg.isRequired ? '(Required)' : '(Optional)' }} · {{ mg.minSelect }}–{{ mg.maxSelect }} select
+                </span>
+              </div>
+            </label>
+          } @empty {
+            <p class="text-xs text-stone-400 pl-1">No modifier groups available</p>
+          }
+        </div>
       </div>
+
+      <!-- Hidden fields (kept in form but not shown) -->
+      <input type="hidden" formControlName="isActive" />
+
+      <!-- Save error -->
+      @if (saveError()) {
+        <div class="alert alert-error text-sm py-2" role="alert">
+          <span>{{ saveError() }}</span>
+        </div>
+      }
 
       <!-- Actions -->
       <div class="modal-action pt-2">
-        <button type="button" class="btn btn-ghost" (click)="closeModal()">Cancel</button>
-        <button type="submit" class="btn btn-neutral">Save Menu Item</button>
+        <button type="button" class="btn btn-ghost" [disabled]="saving() || uploadingImage()" (click)="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-neutral" [disabled]="saving() || uploadingImage()">
+          @if (uploadingImage()) {
+            <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+            Uploading...
+          } @else if (saving()) {
+            <span class="loading loading-spinner loading-xs" aria-hidden="true"></span>
+            Saving...
+          } @else {
+            {{ editingProductId ? 'Update Item' : 'Save Menu Item' }}
+          }
+        </button>
       </div>
     </form>
+  </div>
+</dialog>
+
+<!-- Delete Confirmation Modal -->
+<dialog #deleteConfirmModal class="modal">
+  <div class="modal-box bg-[#FBF9F6] max-w-sm">
+    <h3 class="font-serif font-bold text-lg text-stone-900">Delete Menu Item</h3>
+    <p class="py-4 text-sm text-stone-600">
+      Are you sure you want to delete
+      <strong class="text-stone-800">{{ deletingProduct?.localizedNames?.en }}</strong>?
+      This action cannot be undone.
+    </p>
+    <div class="modal-action">
+      <button type="button" class="btn btn-ghost" (click)="closeDeleteConfirm()">Cancel</button>
+      <button type="button" class="btn btn-error text-white" (click)="confirmDelete()">Delete</button>
+    </div>
   </div>
 </dialog>

@@ -2,6 +2,8 @@ package com.qr_ordering_system.app.common.storage;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -138,6 +140,46 @@ public class FileStorageService {
         } catch (IOException e) {
             // Orphaned files are not critical - do not fail the main operation.
         }
+    }
+
+    /**
+     * Deletes a previously stored file, but only once the current database
+     * transaction has committed.
+     *
+     * <p>Use this whenever the file being removed is still referenced by a row
+     * that is itself being written in the same transaction - swapping a menu
+     * item's image, for example.
+     *
+     * <p><strong>Why not just call {@link #delete(String)} inline?</strong> The
+     * filesystem knows nothing about transactions: a rollback cannot put a
+     * deleted file back. Deleting inline therefore meant that any later failure
+     * in the same request (an optimistic-lock clash on save, a rejected modifier
+     * group, a constraint violation) left a committed row pointing at a file
+     * that had already been unlinked. The bytes are gone and the URL still
+     * points at them, which is not recoverable.
+     *
+     * <p>Registering an after-commit hook keeps the two in step: either both the
+     * row change and the deletion happen, or neither does.
+     *
+     * <p>If no transaction is in progress there is nothing to wait for, so the
+     * file is deleted straight away.
+     */
+    public void deleteAfterCommit(String storedPath) {
+        if (storedPath == null || storedPath.isBlank()) {
+            return;
+        }
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            delete(storedPath);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                delete(storedPath);
+            }
+        });
     }
 
     /** Removes a file, ignoring failures. Used for cleanup on error paths. */

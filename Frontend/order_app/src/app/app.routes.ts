@@ -4,6 +4,7 @@ import { permissionGuard } from './core/guards/permission-guard';
 import { AuthGuard } from './core/auth/auth.guard';
 
 
+
 export const routes: Routes = [
     {
         path: 'login',
@@ -44,11 +45,20 @@ export const routes: Routes = [
                              .then(c => c.CategoriesComponent)
                     },
 
-                     {
+                    {
                         path: 'modifiers_management',
                         loadComponent: () => import('./features/menu_management/modifiers/modifiers.component')
                              .then(c => c.ModifiersComponent)
                     },
+
+                    {
+                        path: 'branch_pricing_management',
+                        loadComponent: () => import('./features/menu_management/branch-pricing/branch-pricing')
+                             .then(c => c.BranchPricingComponent)
+                    },
+
+                    
+
                 ]
                 
             },
@@ -56,7 +66,8 @@ export const routes: Routes = [
             {
                 path: 'user_manage',
                 loadComponent: () => import('./features/user_management/user_management')
-                    .then(c => c.UserManagementComponent)
+                    .then(c => c.UserManagementComponent),
+                canActivate: [permissionGuard('USER_MANAGE')]
             },
 
             {
@@ -94,7 +105,8 @@ export const routes: Routes = [
             {
                 path: 'dashboard',
                 loadComponent: () => import('./features/kitchen_management/kitchen_management')
-                    .then(c => c.KitchenManagement)
+                    .then(c => c.KitchenManagement),
+                canActivate: [permissionGuard('KDS_VIEW')]
             },
           
         ]
