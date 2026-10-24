@@ -108,6 +108,39 @@ export class AuthService {
         return user.permissions.includes(permission);
     }
 
+    /**
+     * The page this user should land on after login (and whenever they
+     * hit /app or a route they lack permission for).
+     *
+     * Ordered checks — each branch uniquely matches one seeded role,
+     * and stays correct for custom roles too (they simply fall into the
+     * first branch whose permission they hold):
+     *
+     *   DASHBOARD_VIEW         → OWNER, MANAGER
+     *   KDS_VIEW               → CHEF
+     *   SERVICE_REQUEST_HANDLE → WAITER   (orders = their workspace)
+     *   PAYMENT_VIEW           → CASHIER
+     *
+     * Every target is guarded by a permission that role provably has,
+     * so this can never bounce a user into a route they can't open
+     * (no redirect loops). Zero-permission accounts get /app/no-access.
+     */
+    landingUrl(): string {
+        if (this.hasPermission('DASHBOARD_VIEW'))  return '/app/dashboard';
+        if (this.hasPermission('KDS_VIEW'))        return '/app/kitchen';
+
+        // Waiter: SERVICE_REQUEST_HANDLE marks the role as waiter, but the
+        // orders page itself needs ORDER_VIEW — require both so a custom
+        // role holding only one of them can't be sent somewhere it can't go.
+        if (this.hasPermission('SERVICE_REQUEST_HANDLE') && this.hasPermission('ORDER_VIEW')) {
+            return '/app/orders';
+        }
+
+        if (this.hasPermission('PAYMENT_VIEW'))    return '/app/payments';
+
+        return '/app/no-access';
+    }
+
 
     private getErrorMessage(error: HttpErrorResponse): string {
         if (error.status === 401) {

@@ -1,13 +1,4 @@
-import {
-    ChangeDetectorRef,
-    Component,
-    ElementRef,
-    inject,
-    OnDestroy,
-    OnInit,
-    signal,
-    ViewChild
-} from "@angular/core";
+import {ChangeDetectorRef,Component,ElementRef,inject,OnDestroy,OnInit,signal,ViewChild} from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { CommonModule } from "@angular/common";
 import { finalize } from "rxjs";

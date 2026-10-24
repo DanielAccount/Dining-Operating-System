@@ -10,8 +10,11 @@ export function permissionGuard(permission: string): CanActivateFn {
             return true;
         }
 
-        // User is authenticated but lacks the permission — don't force re-login,
-        // send them to the fallback page instead.
-        return router.createUrlTree(['/management/store']);
+        // User is authenticated but lacks this permission — don't force
+        // re-login, and don't dump them on a random screen: send them to
+        // their own landing page (dashboard/kitchen/orders/payments).
+        // authService.landingUrl() only ever returns routes the user's
+        // permissions already cover, so this cannot loop.
+        return router.parseUrl(authService.landingUrl());
     };
 }

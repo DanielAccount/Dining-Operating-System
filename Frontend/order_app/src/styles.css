@@ -25,3 +25,66 @@ body {
 .alert-error-custom {
   @apply text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3 text-center transition-all;
 }
+/* ─────────────────────────────────────────────────────────────────────
+   Print: table tents (Phase 3, /app/tables)
+
+   Component styles can't reach `body` (view encapsulation), and printing
+   is a whole-page concern anyway, so the sheet's print rules live here.
+
+   The recipe: hide the entire app, then re-show only the .print-sheet on
+   top of it. The sheet itself is rendered by TablesComponent only while a
+   print is in flight (see printTents / afterprint handling there).
+   ───────────────────────────────────────────────────────────────────── */
+.print-sheet {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+
+  .print-sheet {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1cm;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: white;
+  }
+
+  .tent-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    text-align: center;
+    border: 1px dashed #999; /* cutting guide */
+    padding: 1cm;
+  }
+
+  .tent-card img {
+    width: 5cm;
+    height: 5cm;
+  }
+
+  .tent-business {
+    font-weight: 600;
+    font-size: 14pt;
+  }
+
+  .tent-table {
+    font-size: 18pt;
+    font-weight: 700;
+    margin: 0.2cm 0;
+  }
+
+  .tent-hint {
+    font-size: 10pt;
+    color: #444;
+  }
+}

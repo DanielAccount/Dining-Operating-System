@@ -1,0 +1,132 @@
+<!-- Public customer storefront: mobile-first, no shell, no sidebar. -->
+
+@if (loading()) {
+  <div class="min-h-screen flex flex-col items-center justify-center gap-3">
+    <span class="loading loading-spinner loading-lg text-stone-400"></span>
+    <p class="text-sm text-stone-400 tracking-wide">Loading the menu…</p>
+  </div>
+
+} @else if (notFound()) {
+  <div class="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 21v-4" />
+      <path d="M12 9a1 1 0 1 0 0 2a1 1 0 0 0 0 -2" />
+      <path d="M5 21h14" />
+      <path d="M8 10a4 4 0 1 1 8 0" />
+    </svg>
+
+    <h1 class="font-serif text-2xl font-bold tracking-tight text-stone-900 mt-4">
+      Menu not found
+    </h1>
+    <p class="text-stone-500 mt-2 max-w-sm leading-relaxed">
+      This code doesn't match a live menu — the branch may be closed, or the
+      sticker is out of date. Please ask our staff for the current menu.
+    </p>
+  </div>
+
+} @else if (networkFailed()) {
+  <div class="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+    <h1 class="font-serif text-2xl font-bold tracking-tight text-stone-900">
+      Can't reach the menu
+    </h1>
+    <p class="text-stone-500 mt-2 max-w-sm leading-relaxed">
+      The connection dropped while loading. Check your internet and try again.
+    </p>
+    <button class="btn btn-neutral btn-sm mt-6" (click)="retry()">Try again</button>
+  </div>
+
+} @else if (menu(); as m) {
+
+  <!-- ── Header: whose menu, which table ─────────────────────── -->
+  <header class="bg-[#191919] text-[#fbf9f6] px-5 pt-8 pb-6">
+    <h1 class="font-serif text-2xl font-bold tracking-tight">{{ m.businessName }}</h1>
+    <p class="text-sm opacity-70 mt-1">
+      {{ m.branchName }} · Table {{ m.tableNumber }}
+    </p>
+    @if (m.address) {
+      <p class="text-xs opacity-50 mt-0.5">{{ m.address }}</p>
+    }
+  </header>
+
+  @if (m.categories.length === 0) {
+    <div class="px-6 py-16 text-center text-stone-500">
+      <p class="font-serif text-xl">The menu is being prepared</p>
+      <p class="text-sm mt-1">Nothing is available right now — please ask our staff.</p>
+    </div>
+  } @else {
+
+    <!-- ── Category tabs (sticky, horizontally scrollable on phones) ── -->
+    <nav class="sticky top-0 z-10 bg-[#fbf9f6]/95 backdrop-blur border-b border-gray-200 overflow-x-auto">
+      <div class="flex gap-1 px-4 py-2.5 w-max mx-auto sm:w-auto sm:justify-center">
+        @for (category of m.categories; track category.id) {
+          <button
+            class="whitespace-nowrap px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors"
+            [class]="activeCategoryId() === category.id
+              ? 'bg-[#191919] text-[#fbf9f6]'
+              : 'text-stone-600 hover:bg-stone-200/60'"
+            (click)="activeCategoryId.set(category.id)"
+          >
+            {{ nameOf(category.localizedNames) }}
+          </button>
+        }
+      </div>
+    </nav>
+
+    <!-- ── Items of the active category ────────────────────────── -->
+    @if (activeCategory(); as category) {
+      @if (category.items.length === 0) {
+        <div class="px-6 py-12 text-center text-stone-400">
+          Nothing in this section right now.
+        </div>
+      } @else {
+        <main class="grid grid-cols-1 gap-3 max-w-3xl mx-auto px-4 py-5">
+          @for (item of category.items; track item.id) {
+            <div
+              class="flex gap-4 border border-gray-200 rounded-xl bg-white p-3 shadow-sm"
+              [class.opacity-60]="item.soldOut"
+            >
+              @if (item.imageUrl | imageUrl; as imgSrc) {
+                <img
+                  [src]="imgSrc"
+                  [alt]="nameOf(item.localizedNames)"
+                  class="w-24 h-24 object-cover rounded-lg shrink-0"
+                  loading="lazy"
+                />
+              } @else {
+                <div class="w-24 h-24 rounded-lg bg-stone-100 shrink-0 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M15 8h.01" />
+                    <path d="M7 4h12a2 2 0 0 1 2 2v12m-2 2h-14a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h2" />
+                    <path d="M7 15l3 -3a2 2 0 0 1 2.64 0l2 2m2.36 -2.36a2 2 0 0 1 2.36 0l2.64 2.36" />
+                    <path d="M3 3l18 18" />
+                  </svg>
+                </div>
+              }
+
+              <div class="min-w-0 flex-1 flex flex-col">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="font-medium text-stone-900 leading-snug">
+                    {{ nameOf(item.localizedNames) }}
+                  </div>
+                  <div class="font-serif font-semibold text-stone-900 whitespace-nowrap">
+                    {{ item.price }}
+                  </div>
+                </div>
+
+                @if (nameOf(item.localizedDescriptions); as desc) {
+                  <p class="text-sm text-stone-500 mt-1 line-clamp-2">{{ desc }}</p>
+                }
+
+                @if (item.soldOut) {
+                  <span class="mt-2 self-start badge badge-error badge-outline badge-sm">Sold out</span>
+                }
+              </div>
+            </div>
+          }
+        </main>
+      }
+    }
+  }
+}

@@ -120,7 +120,7 @@
       <!-- Navigation Menu -->
       <ul class="menu w-full grow">
         <li *appHasPermission="'MENU_VIEW'">
-          <a routerLink="store" routerLinkActive="active" 
+          <a routerLink="/app/store-preview" routerLinkActive="active" 
              class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Diner Storefront">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -134,8 +134,11 @@
           </a>
         </li>
 
-        <li *appHasPermission="'REPORT_VIEW'">
-          <a routerLink="/management/dashboard" routerLinkActive="active" 
+        <!-- DASHBOARD_VIEW guards the /app/dashboard route, so the menu item
+             must use the same permission (it previously showed on REPORT_VIEW,
+             which could render a link the guard would then block). -->
+        <li *appHasPermission="'DASHBOARD_VIEW'">
+          <a routerLink="/app/dashboard" routerLinkActive="active" 
              class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Financial Dashboard">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -149,7 +152,7 @@
         </li>
 
         <li *appHasPermission="'MENU_MANAGE'">
-          <a routerLink="/management/menu_management" routerLinkActive="active" 
+          <a routerLink="/app/menu" routerLinkActive="active" 
              class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Manage Menu">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -162,7 +165,7 @@
         </li>
 
         <li *appHasPermission="'USER_MANAGE'">
-          <a routerLink="/management/user_manage" routerLinkActive="active" 
+          <a routerLink="/app/users" routerLinkActive="active" 
              class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="User Management">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -174,8 +177,25 @@
           </a>
         </li>
 
+        <!-- Tables: the owner's Phase 3 screen — list, QR view/print, and
+             (TABLE_MANAGE roles) create/rename/regenerate/delete. Waiters and
+             cashiers see it read-only (TABLE_VIEW) so they can look a table up
+             and re-print a damaged tent. -->
+        <li *appHasPermission="'TABLE_VIEW'">
+          <a routerLink="/app/tables" routerLinkActive="active" 
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Tables">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z" />
+              <path d="M3 10h18" />
+              <path d="M10 3v18" />
+            </svg>
+            <span class="lg:is-drawer-close:hidden">Tables</span>
+          </a>
+        </li>
+
         <li *appHasPermission="'KDS_VIEW'">
-          <a routerLink="/management/kitchen_display" routerLinkActive="active" 
+          <a routerLink="/app/kitchen" routerLinkActive="active" 
              class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Kitchen Management">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -186,8 +206,24 @@
           </a>
         </li>
 
+        <!-- Orders: waiter/cashier landing page (Phase 4 fills it in).
+             ORDER_VIEW is shared by owner, manager, cashier, waiter, chef. -->
+        <li *appHasPermission="'ORDER_VIEW'">
+          <a routerLink="/app/orders" routerLinkActive="active" 
+             class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Orders">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" />
+              <path d="M9 3a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v0" />
+              <path d="M9 12h6" />
+              <path d="M9 16h6" />
+            </svg>
+            <span class="lg:is-drawer-close:hidden">Orders</span>
+          </a>
+        </li>
+
         <li *appHasPermission="'PAYMENT_VIEW'">
-          <a routerLink="/management/payments" routerLinkActive="active" 
+          <a routerLink="/app/payments" routerLinkActive="active" 
              class="lg:is-drawer-close:tooltip lg:is-drawer-close:tooltip-right" data-tip="Payments">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
               <path stroke="none" d="M0 0h24v24H0z" fill="none" />

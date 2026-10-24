@@ -1,0 +1,221 @@
+<div class="flex items-center justify-between w-full mb-6 gap-3">
+  <div class="font-serif text-2xl tracking-tight text-stone-900">
+    <h1>Tables</h1>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <!-- Branch selector: only for tenant-wide users (owner) -->
+    @if (isTenantWide() && branches().length > 0) {
+      <select
+        class="select select-bordered select-sm"
+        [ngModel]="selectedBranchId()"
+        (ngModelChange)="selectBranch($event)"
+      >
+        @for (branch of branches(); track branch.id) {
+          <option [ngValue]="branch.id">{{ branch.name }}</option>
+        }
+      </select>
+    } @else if (branches().length > 0) {
+      <span class="badge badge-outline">{{ branches()[0].name }}</span>
+    }
+
+    <button
+      class="btn btn-ghost btn-sm"
+      [disabled]="tables().length === 0 || loading()"
+      (click)="printAll()"
+      title="Print a table tent for every table in this branch"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+        <path d="M17 8h2a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-2" />
+        <path d="M7 8h-2a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2" />
+        <path d="M7 4h10v4h-10z" />
+        <path d="M9 16h6a1 1 0 0 1 1 1v4h-8v-4a1 1 0 0 1 1 -1" />
+      </svg>
+      Print all tents
+    </button>
+
+    <button *appHasPermission="'TABLE_MANAGE'" class="btn btn-primary btn-sm" (click)="openCreate()">
+      + Add Table
+    </button>
+  </div>
+</div>
+
+<p class="text-stone-500 -mt-4 mb-6 text-sm max-w-2xl">
+  Every table gets its own QR code the moment you add it. Print the tent, stick it on the table,
+  and customers who scan it see the menu — no login, no app to install.
+</p>
+
+@if (error()) {
+  <div class="alert alert-error mb-4">
+    <span>{{ error() }}</span>
+  </div>
+}
+
+@if (successMessage()) {
+  <div class="alert alert-success mb-4">
+    <span>{{ successMessage() }}</span>
+  </div>
+}
+
+@if (loading()) {
+  <div class="flex justify-center p-10">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
+} @else if (selectedBranchId() == null) {
+  <div class="text-center text-stone-500 p-10">
+    No branch selected.
+  </div>
+} @else if (tables().length === 0) {
+  <div class="text-center text-stone-500 p-10">
+    No tables yet. Add your first table — its QR code is created automatically.
+  </div>
+} @else {
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+    @for (table of tables(); track table.id) {
+      <div class="border border-gray-200 rounded-lg shadow-sm p-4 flex flex-col gap-3">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="font-serif text-xl font-bold tracking-tight text-stone-900">
+              {{ table.tableNumber }}
+            </div>
+            <div class="text-xs text-stone-400 truncate max-w-[180px]" [title]="table.qrUrl">
+              {{ table.qrUrl }}
+            </div>
+          </div>
+
+          @if (qrThumbs()[table.id]; as thumb) {
+            <img [src]="thumb" alt="QR code for table {{ table.tableNumber }}"
+                 class="w-20 h-20 rounded-lg border border-gray-100" />
+          } @else {
+            <div class="w-20 h-20 rounded-lg border border-gray-100 flex items-center justify-center">
+              <span class="loading loading-spinner loading-sm text-stone-300"></span>
+            </div>
+          }
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-auto">
+          <button class="btn btn-outline btn-xs" (click)="openQr(table)">View QR</button>
+          <button class="btn btn-ghost btn-xs" (click)="printOne(table)" title="Print just this table's tent">Print</button>
+
+          <span *appHasPermission="'TABLE_MANAGE'" class="flex flex-wrap gap-2">
+            <button class="btn btn-ghost btn-xs" (click)="openEdit(table)">Rename</button>
+            <button class="btn btn-ghost btn-xs" (click)="askRegenerate(table)"
+                    title="Mint a new QR code — old printed codes stop working">
+              Regenerate
+            </button>
+            <button class="btn btn-error btn-outline btn-xs" (click)="askDelete(table)">Delete</button>
+          </span>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- ── Add / rename dialog ─────────────────────────────────────── -->
+<dialog id="tables_add_edit_modal" class="modal" #addEditDialog>
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-md">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+    <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">
+      {{ editingTable() ? 'Rename table' : 'Add table' }}
+    </h3>
+
+    @if (!editingTable()) {
+      <p class="text-sm text-stone-500 mt-1">
+        Just give the table a label you'll recognize — its QR code is minted automatically.
+      </p>
+    }
+
+    <div class="form-control w-full mt-4">
+      <label class="label">
+        <span class="label-text text-stone-700">Table number</span>
+      </label>
+      <input
+        class="input input-bordered w-full"
+        [(ngModel)]="tableNumberInput"
+        (keyup.enter)="saveTable()"
+        placeholder="e.g. T1, Patio 2"
+        autofocus
+      />
+      @if (editingTable()) {
+        <label class="label">
+          <span class="label-text-alt text-stone-400">
+            Renaming never changes the QR code — printed tents keep working.
+          </span>
+        </label>
+      }
+    </div>
+
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-ghost btn-sm">Cancel</button>
+      </form>
+      <button class="btn btn-primary btn-sm" [disabled]="!tableNumberInput.trim()" (click)="saveTable()">
+        {{ editingTable() ? 'Save' : 'Create' }}
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ── QR viewer dialog ────────────────────────────────────────── -->
+<dialog id="tables_qr_modal" class="modal" #qrDialog>
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-sm text-center">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+    <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">
+      Table {{ qrTable()?.tableNumber }}
+    </h3>
+
+    @if (qrImage()) {
+      <img [src]="qrImage()" alt="QR code for table {{ qrTable()?.tableNumber }}"
+           class="mx-auto mt-4 w-64 h-64 rounded-lg border border-gray-100" />
+    } @else {
+      <div class="mx-auto mt-4 w-64 h-64 rounded-lg border border-gray-100 flex items-center justify-center">
+        <span class="loading loading-spinner loading-lg text-stone-300"></span>
+      </div>
+    }
+
+    <p class="text-xs text-stone-400 break-all mt-3">{{ qrTable()?.qrUrl }}</p>
+
+    <div class="flex flex-wrap justify-center gap-2 mt-4">
+      <button class="btn btn-outline btn-sm" (click)="copyUrl()">Copy link</button>
+      <button class="btn btn-outline btn-sm" [disabled]="!qrImage()" (click)="downloadQr()">Download PNG</button>
+      @if (qrTable(); as t) {
+        <button class="btn btn-primary btn-sm" [disabled]="!qrImage()" (click)="printOne(t)">Print tent</button>
+      }
+    </div>
+  </div>
+</dialog>
+
+<!-- ── Confirm dialog (delete / regenerate) ────────────────────── -->
+<dialog id="tables_confirm_modal" class="modal" #confirmDialog>
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-md">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+    </form>
+    <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">{{ confirmTitle }}</h3>
+    <p class="text-stone-600 mt-2 text-sm leading-relaxed">{{ confirmMessage }}</p>
+
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-ghost btn-sm">Cancel</button>
+      </form>
+      <button class="btn btn-error btn-sm" (click)="confirmProceed()">{{ confirmButtonLabel }}</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ── Print sheet (hidden on screen; shown by print CSS) ──────── -->
+<div class="print-sheet" aria-hidden="true">
+  @for (tent of printTents(); track tent.tableNumber) {
+    <div class="tent-card">
+      <div class="tent-business">{{ businessName() }}</div>
+      <div class="tent-table">Table {{ tent.tableNumber }}</div>
+      <img [src]="tent.qr" alt="QR code for table {{ tent.tableNumber }}" />
+      <div class="tent-hint">Scan to view the menu</div>
+    </div>
+  }
+</div>

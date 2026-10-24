@@ -1,0 +1,19 @@
+<div class="flex min-h-[50vh] flex-col items-center justify-center text-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+        <path d="M12 21v-4" />
+        <path d="M12 9a1 1 0 1 0 0 2a1 1 0 0 0 0 -2" />
+        <path d="M5 21h14" />
+        <path d="M8 10a4 4 0 1 1 8 0" />
+    </svg>
+
+    <h1 class="mt-4 font-serif text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl">
+        No access
+    </h1>
+    <p class="mt-2 max-w-md text-stone-500">
+        Your account doesn't have permission to view any pages in this workspace.
+        Ask your manager to assign you a role.
+    </p>
+
+    <button class="btn btn-neutral btn-sm mt-6" (click)="authService.logout()">Log out</button>
+</div>

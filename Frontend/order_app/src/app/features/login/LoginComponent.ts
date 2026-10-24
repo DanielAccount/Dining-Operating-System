@@ -22,7 +22,7 @@ export class LoginComponent implements OnInit {
     ngOnInit(): void {
         // Reverse guard: already-logged-in users go straight to their landing page.
         if (this.authService.isAuthenticated()) {
-            this.router.navigateByUrl(this.resolveLandingUrl());
+            this.router.navigateByUrl(this.authService.landingUrl());
             return;
         }
 
@@ -48,7 +48,7 @@ export class LoginComponent implements OnInit {
                 next: (response) => {
                     console.log(response);
                     this.isLoading = false;
-                    this.router.navigateByUrl(this.resolveLandingUrl());
+                    this.router.navigateByUrl(this.authService.landingUrl());
                 },
                 error: (err) => {
                     console.error(err);
@@ -56,17 +56,5 @@ export class LoginComponent implements OnInit {
                     this.errorMessage = 'Invalid email or password.';
                 }
             });
-    }
-
-
-    private resolveLandingUrl(): string {
-        const auth = this.authService;
-
-        if (auth.hasPermission('REPORT_VIEW'))  return '/management/dashboard';
-        if (auth.hasPermission('MENU_MANAGE'))  return '/management/menu_management';
-        if (auth.hasPermission('ORDER_MANAGE')) return '/kitchen/dashboard';
-        if (auth.hasPermission('PAYMENT_VIEW'))  return '/management/payments'; 
-
-        return '/management/store'; // fallback page
     }
 }
