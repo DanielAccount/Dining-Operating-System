@@ -35,6 +35,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // Tenant-less paths: the login endpoint and the public storefront
+        // (QR scans) must run with NO tenant pinned, whoever calls them.
+        //
+        // The bug this guards against is real and was caught by the Phase 3
+        // smoke: a login request that carries another user's still-valid
+        // Bearer token used to open its transaction with THAT tenant pinned,
+        // so logging in as a different tenant's user failed (or worse, served
+        // the wrong tenant's rows) — the native email lookup is deliberately
+        // cross-tenant, but everything after it filters by the session's
+        // tenant. Same hazard for /api/public/**: a customer with a staff
+        // session in the same browser must not have that tenant leak into a
+        // table-slug lookup from another restaurant.
+        //
+        // The token is still parsed (harmless), but no thread-locals are set.
+        String path = request.getRequestURI();
+        boolean tenantlessPath =
+                path.equals("/api/auth/login")
+                || path.startsWith("/api/public/");
+
         try {
             String authorizationHeader = request.getHeader("Authorization");
 
@@ -93,11 +112,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                    if (tenantId != null) {
+                    if (tenantId != null && !tenantlessPath) {
                         TenantContextHolder.setTenantId(tenantId);
                     }
 
-                    if (branchId != null) {
+                    if (branchId != null && !tenantlessPath) {
                         BranchContextHolder.setBranchId(branchId);
                     }
 

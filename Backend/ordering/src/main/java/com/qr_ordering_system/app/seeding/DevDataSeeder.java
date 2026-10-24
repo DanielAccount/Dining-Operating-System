@@ -13,9 +13,13 @@ import com.qr_ordering_system.app.identity.domain.User;
 import com.qr_ordering_system.app.identity.repository.PermissionRepository;
 import com.qr_ordering_system.app.identity.repository.RoleRepository;
 import com.qr_ordering_system.app.identity.repository.UserRepository;
+import com.qr_ordering_system.app.tables.domain.TableEntity;
+import com.qr_ordering_system.app.tables.repository.TableRepository;
+import com.qr_ordering_system.app.tables.service.QrSlugGenerator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -43,6 +47,12 @@ public class DevDataSeeder implements ApplicationRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TableRepository tableRepository;
+    private final QrSlugGenerator qrSlugGenerator;
+
+    /** Where the storefront lives; QR urls are logged per seeded table. */
+    @Value("${app.public.base-url}")
+    private String publicBaseUrl;
 
     // ---------------------------------------------------------
     // The global permission catalog (never changes per tenant)
@@ -168,6 +178,8 @@ public class DevDataSeeder implements ApplicationRunner {
             seedUser(tenantId, branch, roles.get("WAITER"), "brew.waiter2@example.com", "brew.waiter2", "Hla Hla (Waiter)");
             seedUser(tenantId, branch, roles.get("WAITER"), "brew.waiter3@example.com", "brew.waiter3", "Min Min (Waiter)");
             seedUser(tenantId, branch, roles.get("CHEF"), "brew.chef@example.com", "brew.chef", "Chef Ko Ko");
+
+            seedTables(tenantId, branch, "T1", "T2", "T3", "T4");
         } finally {
             TenantContextHolder.clear();
         }
@@ -207,8 +219,44 @@ public class DevDataSeeder implements ApplicationRunner {
 
             seedUser(tenantId, mandalay, roles.get("CHEF"), "ember.mdy.chef@example.com", "ember.mdy.chef", "Chef Htun (MDY)");
             seedUser(tenantId, yangon, roles.get("CHEF"), "ember.ygn.chef@example.com", "ember.ygn.chef", "Chef Lin (YGN)");
+
+            seedTables(tenantId, mandalay, "T1", "T2", "T3", "T4");
+            seedTables(tenantId, yangon, "T1", "T2", "T3", "T4");
         } finally {
             TenantContextHolder.clear();
+        }
+    }
+
+    // ---------------------------------------------------------
+    // Phase 3: a few tables per branch, so a fresh dev database
+    // has scannable QR codes out of the box.
+    //
+    // Slugs are minted through the real QrSlugGenerator bean - seeded
+    // rows obey the same format (10 base62 chars) and uniqueness
+    // contract as production ones. Both branches number their tables
+    // from T1 because numbers are unique per branch, like real
+    // restaurants that each name their own tables.
+    //
+    // The seeder hand-sets tenantId on EVERY tenant-scoped entity
+    // (Branch, Role, User... and TableEntity). Reason: run() opens ONE
+    // transaction for the whole seed, so Hibernate pins the session's
+    // tenant identifier at open time - root (0) - and an entity whose
+    // @TenantId property is still null at persist binds tenant_id = 0
+    // and dies on the tenants FK at flush. Hand-set values are used
+    // as-is, which is exactly why the base-class comment calls the
+    // seeder "the only exception".
+    // ---------------------------------------------------------
+    private void seedTables(Long tenantId, Branch branch, String... tableNumbers) {
+        for (String number : tableNumbers) {
+            TableEntity table = new TableEntity();
+            table.setTenantId(tenantId);
+            table.setBranch(branch);
+            table.setTableNumber(number);
+            table.setQrSlug(qrSlugGenerator.generateUnique());
+            tableRepository.save(table);
+
+            log.info("  seeded table '{}' for branch '{}' -> scan {} to see its menu",
+                    number, branch.getName(), publicBaseUrl + "/t/" + table.getQrSlug());
         }
     }
 

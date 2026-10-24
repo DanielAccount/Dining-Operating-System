@@ -1,4 +1,4 @@
-package com.qr_ordering_system.app.menu;
+package com.qr_ordering_system.app.common;
 
 import com.qr_ordering_system.app.common.domain.TenantStatus;
 import com.qr_ordering_system.app.common.tenant.TenantContextHolder;
@@ -37,10 +37,14 @@ import java.util.function.Supplier;
  * uses - and commits. A throwaway tenant is created per test and deleted
  * afterwards, so the suite neither depends on the dev seeder nor leaves anything
  * behind.
+ *
+ * <p>Lives in the shared {@code app.common} test package so any module's tests
+ * can extend it (it started life inside {@code app.menu}; the tables module's
+ * public-menu tests needed it too).</p>
  */
 @SpringBootTest
 @ActiveProfiles("local")
-abstract class TenantScopedTestSupport {
+public abstract class TenantScopedTestSupport {
 
     protected static final String NAME_PREFIX = "zz-test-";
 
@@ -70,10 +74,12 @@ abstract class TenantScopedTestSupport {
             // Children first: these foreign keys are not cascaded.
             jdbcTemplate.update("DELETE FROM menu_item_modifier_groups WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM branch_menu_items WHERE tenant_id = ?", tenantId);
+            jdbcTemplate.update("DELETE FROM restaurant_tables WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM menu_items WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM modifier_options WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM modifier_groups WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM categories WHERE tenant_id = ?", tenantId);
+            jdbcTemplate.update("DELETE FROM branches WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM tenants WHERE id = ?", tenantId);
         }
         createdTenantIds.clear();

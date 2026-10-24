@@ -1,4 +1,6 @@
 spring:
+  flyway:
+    repair-on-migrate: true
   datasource:
     url: jdbc:postgresql://localhost:5432/dining_operation_app
     username: postgres
@@ -19,6 +21,11 @@ app:
   upload:
     dir: uploads/menu-images
     public-path: /uploads/menu-images
+
+  public:
+    # QR codes minted in local dev point at the Angular dev server, so a
+    # phone scanning them (same Wi-Fi) opens the dev storefront.
+    base-url: http://localhost:4200
 
   security:
     jwt:

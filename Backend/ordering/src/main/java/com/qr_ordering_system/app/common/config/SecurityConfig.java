@@ -54,6 +54,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(
                                 "/api/ping",
+                                // The QR storefront: the slug in the path is the
+                                // only credential a customer has. See
+                                // PublicTableController for the contract.
+                                "/api/public/**",
                                 "/actuator/health",
                                 "/actuator/info",
                                 "/actuator/flyway",

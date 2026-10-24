@@ -20,11 +20,19 @@ import java.math.BigDecimal;
 @Getter @Setter
 public class BranchMenuItem extends AbstractTenantEntity {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // EAGER is required, not a choice: Hibernate 7 (the whole 7.2.x line,
+    // verified against 7.2.7 and 7.2.12) refuses LAZY to-one associations whose
+    // target is a @SoftDelete entity (everything extending BaseEntity is one):
+    // a lazy proxy cannot apply the soft-delete filter at join time. This
+    // restriction is why the backend stopped booting after the Boot 4 upgrade -
+    // Phase 2's smoke runs predate it. The read paths that matter already
+    // `join fetch` exactly these associations, so EAGER formalizes the
+    // existing query shapes instead of changing them.
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER) // see the comment on `branch`
     @JoinColumn(name = "menu_item_id", nullable = false)
     private MenuItem menuItem;
 

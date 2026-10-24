@@ -42,3 +42,10 @@ management:
 app:
   upload:
     dir: uploads/menu-images
+
+  public:
+    # Origin that serves the customer storefront (the Angular app).
+    # The API stamps {base-url}/t/{qrSlug} into every table's qrUrl so the
+    # frontend never assembles QR URLs itself. Local dev = the dev server;
+    # production = the real domain the printed QR codes point at.
+    base-url: http://localhost:4200

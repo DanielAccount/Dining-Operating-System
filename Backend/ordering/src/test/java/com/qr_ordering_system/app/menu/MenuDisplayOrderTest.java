@@ -1,5 +1,6 @@
 package com.qr_ordering_system.app.menu;
 
+import com.qr_ordering_system.app.common.TenantScopedTestSupport;
 import com.qr_ordering_system.app.menu.dto.request.CategoryCreateRequest;
 import com.qr_ordering_system.app.menu.dto.request.CategoryUpdateRequest;
 import com.qr_ordering_system.app.menu.dto.request.MenuItemCreateRequest;
