@@ -56,8 +56,33 @@
     </div>
   } @else {
 
+    <!-- ── Your orders (returning phones with a stored session) ────── -->
+    @if (orders().length > 0) {
+      <section class="px-4 pt-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="font-serif text-base font-bold tracking-tight text-stone-900">Your orders</h2>
+        </div>
+        <div class="space-y-2">
+          @for (order of orders(); track order.id) {
+            <div class="border border-gray-200 rounded-xl bg-white p-3 shadow-sm">
+              <div class="flex items-center justify-between gap-3">
+                <div class="font-medium text-sm">
+                  {{ order.invoiceNumber ?? '#' + order.id }}
+                </div>
+                <span class="badge badge-sm {{ statusBadge(order.status) }}">{{ statusLabel(order.status) }}</span>
+              </div>
+              <div class="text-xs text-stone-500 mt-1">
+                {{ order.items.length }} item(s) · {{ order.finalAmount }}
+                · {{ order.createdAt | date:'HH:mm' }}
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     <!-- ── Category tabs (sticky, horizontally scrollable on phones) ── -->
-    <nav class="sticky top-0 z-10 bg-[#fbf9f6]/95 backdrop-blur border-b border-gray-200 overflow-x-auto">
+    <nav class="sticky top-0 z-10 bg-[#fbf9f6]/95 backdrop-blur border-b border-gray-200 overflow-x-auto mt-2">
       <div class="flex gap-1 px-4 py-2.5 w-max mx-auto sm:w-auto sm:justify-center">
         @for (category of m.categories; track category.id) {
           <button
@@ -80,7 +105,7 @@
           Nothing in this section right now.
         </div>
       } @else {
-        <main class="grid grid-cols-1 gap-3 max-w-3xl mx-auto px-4 py-5">
+        <main class="grid grid-cols-1 gap-3 max-w-3xl mx-auto px-4 py-5 pb-24">
           @for (item of category.items; track item.id) {
             <div
               class="flex gap-4 border border-gray-200 rounded-xl bg-white p-3 shadow-sm"
@@ -119,14 +144,52 @@
                   <p class="text-sm text-stone-500 mt-1 line-clamp-2">{{ desc }}</p>
                 }
 
-                @if (item.soldOut) {
-                  <span class="mt-2 self-start badge badge-error badge-outline badge-sm">Sold out</span>
-                }
+                <div class="mt-auto pt-2">
+                  @if (item.soldOut) {
+                    <span class="badge badge-error badge-outline badge-sm">Sold out</span>
+                  } @else if (item.modifierGroups.length > 0) {
+                    <button class="btn btn-outline btn-xs rounded-full" (click)="addToCart(item)">
+                      Choose
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M9 6l6 6l-6 6" />
+                      </svg>
+                    </button>
+                  } @else {
+                    <button class="btn btn-neutral btn-xs rounded-full text-[#fbf9f6]" (click)="addToCart(item)">
+                      + Add
+                    </button>
+                  }
+                </div>
               </div>
             </div>
           }
         </main>
       }
     }
+
+    <!-- ── Floating cart bar ────────────────────────────────────── -->
+    @if (cart.itemCount() > 0) {
+      <div class="fixed bottom-4 inset-x-0 z-20 px-4 pointer-events-none">
+        <button
+          class="pointer-events-auto mx-auto flex items-center gap-3 bg-[#191919] text-[#fbf9f6] rounded-full px-5 py-3 shadow-lg w-full max-w-sm justify-between"
+          (click)="openCart()"
+        >
+          <span class="text-sm font-medium">{{ cart.itemCount() }} item(s)</span>
+          <span class="font-serif font-bold">{{ cart.total() }}</span>
+          <span class="text-xs opacity-80">View order →</span>
+        </button>
+      </div>
+    }
   }
 }
+
+<!-- ── Sheets ──────────────────────────────────────────────────────── -->
+<app-item-options-sheet #optionsSheet />
+<app-cart-sheet
+  #cartSheet
+  [submitting]="submitting()"
+  [submitError]="submitError()"
+  (placeOrder)="submitCart($event)"
+  (dismissed)="cartDismissed()"
+/>

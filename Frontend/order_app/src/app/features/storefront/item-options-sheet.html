@@ -1,0 +1,58 @@
+<dialog #dialog class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-md p-0 rounded-t-2xl sm:rounded-2xl">
+
+    @if (item(); as configured) {
+      <div class="sticky top-0 bg-[#FBF9F6] px-5 pt-5 pb-3 border-b border-gray-200">
+        <h3 class="font-serif text-lg font-bold tracking-tight">{{ nameOf(configured.localizedNames) }}</h3>
+        <p class="text-xs text-stone-500 mt-0.5">
+          @for (group of configured.modifierGroups; track group.id) {
+            @if (group.required) {
+              <span class="text-stone-500">{{ nameOf(group.localizedNames) }} is required.</span>
+            }
+          }
+        </p>
+        <form method="dialog" class="absolute right-3 top-3">
+          <button class="btn btn-sm btn-circle btn-ghost">✕</button>
+        </form>
+      </div>
+
+      <div class="px-5 py-4 max-h-[50vh] overflow-y-auto space-y-5">
+        @for (group of configured.modifierGroups; track group.id) {
+          <div>
+            <div class="flex items-baseline justify-between">
+              <div class="font-medium text-sm">{{ nameOf(group.localizedNames) }}</div>
+              <div class="text-[11px] text-stone-400">
+                @if (group.required) { required } @else { optional }
+                · pick {{ group.minSelect }}–{{ group.maxSelect === 0 ? 'any' : group.maxSelect }}
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mt-2">
+              @for (option of group.options; track option.id) {
+                <button
+                  class="btn btn-xs rounded-full normal-case font-medium transition-colors"
+                  [class]="isSelected(group.id, option.id)
+                    ? 'bg-[#191919] text-[#fbf9f6] border-[#191919]'
+                    : 'btn-outline text-stone-600 border-gray-300 hover:border-stone-500'"
+                  (click)="toggle(group.id, option.id, group.maxSelect)"
+                >
+                  {{ optionName(option) }}
+                  @if (option.extraPrice > 0) {
+                    <span class="opacity-70">+{{ option.extraPrice }}</span>
+                  }
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="border-t border-gray-200 px-5 py-4 flex items-center justify-between sticky bottom-0 bg-[#FBF9F6]">
+        <button class="btn btn-ghost btn-sm" (click)="close()">Cancel</button>
+        <button class="btn btn-primary btn-sm" [disabled]="!valid()" (click)="add()">
+          Add to order
+        </button>
+      </div>
+    }
+  </div>
+</dialog>

@@ -72,6 +72,13 @@ public abstract class TenantScopedTestSupport {
 
         for (Long tenantId : createdTenantIds) {
             // Children first: these foreign keys are not cascaded.
+            // Order engine (Phase 4): modifiers -> items -> orders -> sessions.
+            jdbcTemplate.update("DELETE FROM order_item_modifiers WHERE tenant_id = ?", tenantId);
+            jdbcTemplate.update("DELETE FROM order_status_history WHERE tenant_id = ?", tenantId);
+            jdbcTemplate.update("DELETE FROM order_items WHERE tenant_id = ?", tenantId);
+            jdbcTemplate.update("DELETE FROM orders WHERE tenant_id = ?", tenantId);
+            jdbcTemplate.update("DELETE FROM table_sessions WHERE tenant_id = ?", tenantId);
+            // Menu + tables.
             jdbcTemplate.update("DELETE FROM menu_item_modifier_groups WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM branch_menu_items WHERE tenant_id = ?", tenantId);
             jdbcTemplate.update("DELETE FROM restaurant_tables WHERE tenant_id = ?", tenantId);

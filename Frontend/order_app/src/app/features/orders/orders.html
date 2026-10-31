@@ -1,6 +1,287 @@
-<h1 class="font-serif text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
-    Orders
-</h1>
-<p class="mt-4 text-stone-500">
-    Order management arrives in Phase 4 — waiters will take and track orders from here.
-</p>
+<div class="flex items-center justify-between w-full mb-6 gap-3">
+  <div class="font-serif text-2xl tracking-tight text-stone-900">
+    <h1>Orders</h1>
+  </div>
+
+  <div class="flex items-center gap-3">
+    @if (isTenantWide() && branches().length > 0) {
+      <select
+        class="select select-bordered select-sm"
+        [ngModel]="selectedBranchId()"
+        (ngModelChange)="selectBranch($event)"
+      >
+        @for (branch of branches(); track branch.id) {
+          <option [ngValue]="branch.id">{{ branch.name }}</option>
+        }
+      </select>
+    }
+    @if (!isTenantWide() && branches().length > 0) {
+      <span class="badge badge-outline">{{ branches()[0].name }}</span>
+    }
+
+    <button *appHasPermission="'ORDER_CREATE'" class="btn btn-primary btn-sm"
+            [disabled]="tables().length === 0" (click)="openCreate()">
+      + New order
+    </button>
+  </div>
+</div>
+
+@if (successMessage()) {
+  <div class="alert alert-success mb-4">
+    <span>{{ successMessage() }}</span>
+  </div>
+}
+@if (error()) {
+  <div class="alert alert-error mb-4">
+    <span>{{ error() }}</span>
+  </div>
+}
+
+<!-- Filters -->
+<div class="tabs tabs-boxed mb-4 w-fit">
+  <button class="tab tab-sm" [class]="statusFilter() === 'ACTIVE' ? 'tab-active' : ''"
+          (click)="statusFilter.set('ACTIVE')">Live</button>
+  <button class="tab tab-sm" [class]="statusFilter() === 'PENDING' ? 'tab-active' : ''"
+          (click)="statusFilter.set('PENDING')">New</button>
+  <button class="tab tab-sm" [class]="statusFilter() === 'ALL' ? 'tab-active' : ''"
+          (click)="statusFilter.set('ALL')">All</button>
+</div>
+
+@if (loading()) {
+  <div class="flex justify-center p-10">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
+}
+
+@if (!loading() && selectedBranchId() == null) {
+  <div class="text-center text-stone-500 p-10">No branch selected.</div>
+}
+
+@if (!loading() && listError()) {
+  <div class="text-center p-10">
+    <p class="text-stone-600">{{ listError() }}</p>
+    <button class="btn btn-ghost btn-sm mt-3" (click)="loadOrders(selectedBranchId())">Try again</button>
+  </div>
+}
+
+@if (!loading() && !listError() && filteredOrders().length === 0) {
+  <div class="text-center text-stone-500 p-10">
+    No orders to show right now.
+  </div>
+}
+
+@if (!loading() && !listError() && filteredOrders().length > 0) {
+  <div class="overflow-x-auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Table</th>
+          <th>Source</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th>Placed</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of filteredOrders(); track order.id) {
+          <tr>
+            <td class="font-medium">{{ orderTitle(order) }}</td>
+            <td>{{ order.tableNumber ?? (order.orderType === 'TAKEAWAY' ? 'Takeaway' : '--') }}</td>
+            <td class="text-stone-500">{{ sourceLabel(order.source) }}</td>
+            <td>
+              <span class="badge badge-sm {{ statusBadge(order.status) }}">
+                {{ statusLabel(order.status) }}
+              </span>
+            </td>
+            <td class="font-mono">{{ order.finalAmount }}</td>
+            <td class="text-stone-500">{{ order.createdAt | date:'HH:mm' }}</td>
+            <td class="flex justify-end gap-1">
+              <button class="btn btn-ghost btn-xs" (click)="openDetail(order)">Details</button>
+
+              <button *appHasPermission="'ORDER_UPDATE'" class="btn btn-outline btn-xs"
+                      [disabled]="order.status !== 'PENDING' || saving()"
+                      (click)="accept(order)">
+                Accept
+              </button>
+
+              <button *appHasPermission="'ORDER_CANCEL'" class="btn btn-error btn-outline btn-xs"
+                      [disabled]="order.status === 'CANCELLED' || saving()"
+                      (click)="askCancel(order)">
+                Cancel
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Create order for a guest -->
+<dialog id="orders_create_modal" class="modal" #createDialog>
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-2xl">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">X</button>
+    </form>
+
+    <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">
+      New order for a guest
+    </h3>
+
+    <div class="flex items-center gap-2 mt-4">
+      <select class="select select-bordered select-sm" [(ngModel)]="createTableId">
+        @for (table of tables(); track table.id) {
+          <option [ngValue]="table.id">Table {{ table.tableNumber }}</option>
+        }
+      </select>
+      <span class="text-xs text-stone-500">{{ draftTotal() }} total</span>
+    </div>
+
+    @if (draftLines().length > 0) {
+      <ul class="mt-3 divide-y divide-stone-200/70">
+        @for (line of draftLines(); track line.key) {
+          <li class="flex items-center justify-between gap-3 py-2">
+            <div class="min-w-0">
+              <div class="text-sm font-medium truncate">{{ line.name }}</div>
+              <div class="text-xs text-stone-500">
+                {{ line.price }} x {{ line.quantity }} = {{ line.price * line.quantity }}
+              </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button class="btn btn-xs btn-ghost" (click)="decrementDraft(line.key)">-</button>
+              <span class="w-6 text-center text-sm">{{ line.quantity }}</span>
+              <button class="btn btn-xs btn-ghost" (click)="incrementDraft(line.key)">+</button>
+              <button class="btn btn-xs btn-ghost text-red-600" (click)="removeDraft(line.key)">X</button>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+    @if (draftLines().length === 0) {
+      <p class="text-sm text-stone-500 mt-3">No items yet - tap items below to add them.</p>
+    }
+
+    <div class="mt-4">
+      <div class="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Menu</div>
+
+      @if (menuLoading()) {
+        <div class="flex justify-center p-6">
+          <span class="loading loading-spinner"></span>
+        </div>
+      }
+
+      @if (!menuLoading() && menuItems().length === 0) {
+        <p class="text-sm text-stone-400">No menu items available.</p>
+      }
+
+      @if (!menuLoading() && menuItems().length > 0) {
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+          @for (item of menuItems(); track item.id) {
+            <button class="flex items-center justify-between border border-stone-200 rounded-lg px-3 py-2 bg-white hover:border-stone-400 text-left"
+                    (click)="addDraftItem(item)">
+              <span class="text-sm font-medium truncate">{{ itemName(item) }}</span>
+              <span class="text-sm text-stone-500 shrink-0">{{ basePrice(item) }}</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <input type="text" class="input input-bordered w-full mt-4" maxlength="500"
+           placeholder="Note for the kitchen (optional)" [(ngModel)]="createNote" />
+
+    @if (createError()) {
+      <div class="alert alert-error mt-3 text-sm"><span>{{ createError() }}</span></div>
+    }
+
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-ghost btn-sm">Cancel</button>
+      </form>
+      <button class="btn btn-primary btn-sm"
+              [disabled]="saving() || draftLines().length === 0"
+              (click)="submitCreate()">
+        {{ saving() ? 'Placing...' : 'Place order' }}
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Order detail with its status story -->
+<dialog id="orders_detail_modal" class="modal" #detailDialog>
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-lg">
+    <form method="dialog">
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">X</button>
+    </form>
+
+    @if (detail(); as d) {
+      <h3 class="font-serif text-xl font-bold tracking-tight text-stone-900">
+        {{ orderTitle(d.order) }}
+      </h3>
+
+      <div class="flex flex-wrap items-center gap-2 text-xs text-stone-500 mt-1">
+        <span class="badge badge-sm {{ statusBadge(d.order.status) }}">{{ statusLabel(d.order.status) }}</span>
+        <span>{{ sourceLabel(d.order.source) }}</span>
+        <span>Table {{ d.order.tableNumber ?? '--' }}</span>
+        <span>{{ d.order.createdAt | date:'MMM d, HH:mm' }}</span>
+      </div>
+
+      @if (d.order.customerNote) {
+        <div class="mt-3 text-sm bg-stone-100 rounded-lg px-3 py-2">
+          <span class="text-stone-500">Note: </span>{{ d.order.customerNote }}
+        </div>
+      }
+
+      <table class="table table-sm mt-3">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th class="text-center">Qty</th>
+            <th class="text-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (line of d.order.items; track line.id) {
+            <tr>
+              <td>
+                <div>{{ line.itemNameSnapshot['en'] }}</div>
+                @if (line.modifiers.length > 0) {
+                  <div class="text-xs text-stone-400">
+                    {{ line.modifiers.map(m => m.name).join(', ') }}
+                  </div>
+                }
+              </td>
+              <td class="text-center">{{ line.quantity }}</td>
+              <td class="text-right font-mono">{{ line.lineTotal }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="flex justify-between font-medium text-sm mt-2">
+        <span>Order total</span>
+        <span class="font-mono">{{ d.order.finalAmount }}</span>
+      </div>
+
+      <div class="text-xs font-semibold text-stone-500 uppercase tracking-wide mt-5 mb-2">
+        History
+      </div>
+
+      <div class="space-y-2">
+        @for (entry of d.history; track entry.id) {
+          <div class="border-l-2 border-stone-300 pl-3">
+            <div class="text-sm">{{ statusLabel(entry.status) }}</div>
+            <div class="text-xs text-stone-500">
+              {{ entry.createdAt | date:'HH:mm' }}
+              @if (entry.remarks) {
+                <span>, {{ entry.remarks }}</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</dialog>

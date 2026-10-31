@@ -1,0 +1,90 @@
+<dialog #dialog class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box bg-[#FBF9F6] text-[#191919] max-w-md p-0 rounded-t-2xl sm:rounded-2xl">
+
+    <div class="sticky top-0 bg-[#FBF9F6] px-5 pt-5 pb-3 border-b border-gray-200">
+      <h3 class="font-serif text-lg font-bold tracking-tight">Your order</h3>
+      <form method="dialog" class="absolute right-3 top-3">
+        <button class="btn btn-sm btn-circle btn-ghost">✕</button>
+      </form>
+    </div>
+
+    @if (cart.lines().length === 0) {
+      <div class="px-5 py-10 text-center text-stone-400">
+        Nothing in your order yet.
+      </div>
+    } @else {
+      <div class="px-5 py-4 max-h-[40vh] overflow-y-auto space-y-3">
+        @for (line of cart.lines(); track line.key) {
+          <div class="flex items-start justify-between gap-3 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+            <div class="min-w-0">
+              <div class="font-medium text-sm truncate">{{ itemName(line.item) }}</div>
+              @if (line.selectedOptions.length > 0) {
+                <div class="text-xs text-stone-500">
+                  {{ line.selectedOptions.map(o => o.name).join(', ') }}
+                </div>
+              }
+              <div class="text-xs text-stone-400">{{ lineTotal(line) }}</div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <button class="btn btn-xs btn-ghost" (click)="cart.decrement(line.key)">−</button>
+              <span class="w-5 text-center text-sm font-medium">{{ line.quantity }}</span>
+              <button class="btn btn-xs btn-ghost" (click)="cart.increment(line.key)">+</button>
+              <button class="btn btn-xs btn-ghost text-red-500" (click)="cart.remove(line.key)"
+                      aria-label="Remove {{ itemName(line.item) }}">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M4 7l16 0" />
+                  <path d="M10 11l0 6" />
+                  <path d="M14 11l0 6" />
+                  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                  <path d="M9 7l0 -3h6l0 3" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="px-5 pb-2 space-y-3">
+        <div>
+          <label class="label"><span class="label-text text-stone-600 text-xs">Note for the kitchen (optional)</span></label>
+          <textarea
+            class="textarea textarea-bordered w-full text-sm bg-white"
+            rows="2"
+            maxlength="500"
+            placeholder="e.g. less spicy, no peanuts"
+            [(ngModel)]="note"
+            [disabled]="submitting()"
+          ></textarea>
+        </div>
+      </div>
+    }
+
+    @if (submitError()) {
+      <div class="mx-5 mb-3 alert alert-error text-sm">
+        <span>{{ submitError() }}</span>
+      </div>
+    }
+
+    <div class="border-t border-gray-200 px-5 py-4 flex items-center justify-between sticky bottom-0 bg-[#FBF9F6] rounded-b-2xl">
+      <div>
+        <div class="text-xs text-stone-400">Total</div>
+        <div class="font-serif font-bold text-lg">{{ cart.total() }}</div>
+      </div>
+
+      <button
+        class="btn btn-primary btn-sm"
+        [disabled]="cart.lines().length === 0 || submitting()"
+        (click)="submit()"
+      >
+        @if (submitting()) {
+          <span class="loading loading-spinner loading-xs"></span>
+          Sending…
+        } @else {
+          Place order
+        }
+      </button>
+    </div>
+  </div>
+</dialog>
