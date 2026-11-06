@@ -27,8 +27,8 @@ interface DraftLine {
  * The waiter/cashier working screen - the page waiters land on after login.
  * Phase 4 scope: the branch's live order list, accept and cancel, and the
  * create-order-at-a-table form for guest orders taken by hand. The kitchen's
- * item-level transitions (preparing/ready/served) are Phase 5 and are
- * deliberately absent here.
+ * item-level transitions (preparing/ready/served) are owned by the Phase 5
+ * KDS and are deliberately absent here.
  */
 @Component({
     selector: 'app-orders',

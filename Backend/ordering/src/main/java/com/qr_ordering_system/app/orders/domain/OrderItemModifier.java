@@ -11,6 +11,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import java.math.BigDecimal;
 
@@ -42,9 +44,16 @@ public class OrderItemModifier extends AbstractTenantAuditableEntity {
     @JoinColumn(name = "order_item_id", nullable = false)
     private OrderItem orderItem;
 
-    /** Nullable on purpose - retired options null out, snapshots stay. */
+    /**
+     * Nullable on purpose - retired options null out, snapshots stay.
+     * IGNORE is required for a retired option: without it, Hibernate treats
+     * the soft-delete-filtered row as a broken FK and fails the whole ticket
+     * load. updatable=false keeps this immutable historical reference intact
+     * when the parent order line changes.
+     */
     @ManyToOne(fetch = FetchType.EAGER) // see the comment on `orderItem`
-    @JoinColumn(name = "modifier_option_id")
+    @JoinColumn(name = "modifier_option_id", updatable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private ModifierOption modifierOption;
 
     @Column(name = "modifier_name", nullable = false)

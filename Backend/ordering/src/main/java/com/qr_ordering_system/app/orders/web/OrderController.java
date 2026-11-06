@@ -31,8 +31,8 @@ import java.util.List;
  *       is recorded on the order itself</li>
  * </ul>
  *
- * <p>The kitchen's item-level transitions (preparing/ready/served) are
- * deliberately absent: Phase 5's KDS owns them.</p>
+ * <p>The kitchen's item-level transitions (preparing/ready/served) live in
+ * the Phase 5 KDS controller, behind the kitchen permissions.</p>
  */
 @RestController
 @RequestMapping("api/branches/{branchId}")

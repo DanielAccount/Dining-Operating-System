@@ -33,9 +33,9 @@ import java.util.Set;
  * math itself lives in {@link OrderSubmissionService}; this class decides
  * WHO placed the order and enforces branch scoping.
  *
- * <p>Status transitions are narrow on purpose. Phase 4 offers exactly
+ * <p>Status transitions are narrow on purpose. Phase 4 owns exactly
  * PENDING -> ACCEPTED and *- -> CANCELLED. PREPARING/READY/COMPLETED are
- * the kitchen's states and arrive with the KDS in Phase 5 - an order must
+ * the kitchen's states and are owned by the Phase 5 KDS - an order must
  * never reach COMPLETED by a path the kitchen never saw.</p>
  */
 @Service

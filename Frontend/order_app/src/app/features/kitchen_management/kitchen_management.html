@@ -1,4 +1,158 @@
-<h1 class="font-serif text-3xl font-bold tracking-tight text-stone-900 sm:text-4xl">
-    Kitchen Management
-</h1>
+<div class="flex flex-wrap items-center justify-between w-full mb-6 gap-3">
+  <div>
+    <h1 class="font-serif text-2xl tracking-tight text-stone-900">Kitchen Display</h1>
+    <p class="text-xs text-stone-500 mt-1">
+      Auto-refreshes every 10 seconds
+      @if (lastUpdated(); as updated) {
+        · Updated {{ updated | date:'HH:mm:ss' }}
+      }
+    </p>
+  </div>
 
+  <div class="flex items-center gap-2">
+    @if (isTenantWide() && branches().length > 0) {
+      <select
+        class="select select-bordered select-sm"
+        [ngModel]="selectedBranchId()"
+        (ngModelChange)="selectBranch($event)"
+      >
+        @for (branch of branches(); track branch.id) {
+          <option [ngValue]="branch.id">{{ branch.name }}</option>
+        }
+      </select>
+    } @else if (branches().length > 0) {
+      <span class="badge badge-outline">{{ branches()[0].name }}</span>
+    }
+
+    <button
+      class="btn btn-outline btn-sm"
+      [disabled]="selectedBranchId() == null || refreshing()"
+      (click)="refresh()"
+    >
+      @if (refreshing()) {
+        <span class="loading loading-spinner loading-xs"></span>
+      }
+      Refresh
+    </button>
+  </div>
+</div>
+
+@if (error()) {
+  <div class="alert alert-warning mb-4">
+    <span>{{ error() }}</span>
+    <button class="btn btn-ghost btn-xs" (click)="refresh()">Try again</button>
+  </div>
+}
+
+@if (actionError()) {
+  <div class="alert alert-error mb-4">
+    <span>{{ actionError() }}</span>
+  </div>
+}
+
+<div class="grid grid-cols-3 gap-2 mb-5 max-w-md">
+  <div class="rounded-lg border border-stone-200 bg-white px-3 py-2">
+    <div class="text-xs text-stone-500">New</div>
+    <div class="text-2xl font-semibold text-amber-700">{{ pendingCount() }}</div>
+  </div>
+  <div class="rounded-lg border border-stone-200 bg-white px-3 py-2">
+    <div class="text-xs text-stone-500">Preparing</div>
+    <div class="text-2xl font-semibold text-sky-700">{{ preparingCount() }}</div>
+  </div>
+  <div class="rounded-lg border border-stone-200 bg-white px-3 py-2">
+    <div class="text-xs text-stone-500">Ready</div>
+    <div class="text-2xl font-semibold text-emerald-700">{{ readyCount() }}</div>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="flex justify-center p-12">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
+}
+
+@if (!loading() && selectedBranchId() == null) {
+  <div class="text-center text-stone-500 p-10">No branch selected.</div>
+}
+
+@if (!loading() && selectedBranchId() != null && !error() && tickets().length === 0) {
+  <div class="text-center text-stone-500 p-10">
+    <div class="text-4xl mb-3">✓</div>
+    <div>No active kitchen orders.</div>
+  </div>
+}
+
+@if (!loading() && tickets().length > 0) {
+  <div class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 items-start">
+    @for (ticket of tickets(); track ticket.orderId) {
+      <article class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+        <header class="bg-stone-50 border-b border-stone-200 px-4 py-3">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="font-serif text-xl font-bold text-stone-900">
+                {{ ticketTitle(ticket) }}
+              </div>
+              <div class="text-xs text-stone-500 mt-1">
+                {{ tableLabel(ticket) }} · {{ sourceLabel(ticket.source) }} ·
+                {{ ticket.orderCreatedAt | date:'HH:mm' }}
+                <span class="font-medium">· {{ elapsedLabel(ticket.orderCreatedAt) }}</span>
+              </div>
+            </div>
+            <span class="badge badge-sm badge-outline shrink-0">
+              {{ ticket.orderStatus }}
+            </span>
+          </div>
+
+          @if (ticket.customerNote) {
+            <div class="mt-3 rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900">
+              <span class="font-semibold">Note:</span> {{ ticket.customerNote }}
+            </div>
+          }
+        </header>
+
+        <div class="divide-y divide-stone-100">
+          @for (item of ticket.items; track item.id) {
+            <div class="px-4 py-3">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="font-semibold text-stone-900">
+                    <span class="text-stone-500 mr-1">{{ item.quantity }}×</span>
+                    {{ itemName(item) }}
+                  </div>
+
+                  @if (item.modifiers.length > 0) {
+                    <ul class="mt-1 space-y-0.5">
+                      @for (modifier of item.modifiers; track modifier.id) {
+                        <li class="text-sm text-sky-700">• {{ modifier.name }}</li>
+                      }
+                    </ul>
+                  }
+                </div>
+
+                <span class="badge badge-sm shrink-0 {{ statusBadge(item.itemStatus) }}">
+                  {{ statusLabel(item.itemStatus) }}
+                </span>
+              </div>
+
+              @if (canUpdate()) {
+                <button
+                  class="btn btn-sm mt-3 w-full"
+                  [class.btn-warning]="item.itemStatus === 'PENDING'"
+                  [class.btn-info]="item.itemStatus === 'PREPARING'"
+                  [class.btn-success]="item.itemStatus === 'READY'"
+                  [disabled]="updatingIds().has(item.id)"
+                  (click)="advance(item)"
+                >
+                  @if (updatingIds().has(item.id)) {
+                    <span class="loading loading-spinner loading-xs"></span>
+                  }
+                  {{ updatingIds().has(item.id) ? 'Updating...' : actionLabel(item.itemStatus) }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </article>
+    }
+  </div>
+}

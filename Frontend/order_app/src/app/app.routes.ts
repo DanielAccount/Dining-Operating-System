@@ -21,7 +21,7 @@ import { AuthGuard } from './core/auth/auth.guard';
 // is fine). Phases 3–8 already have reserved slots:
 //   Phase 3: /app/tables            (table mgmt + QR download)
 //   Phase 4: /app/orders            (already stubbed — waiter landing)
-//   Phase 5: /app/kitchen           (already stubbed — KDS)
+//   Phase 5: /app/kitchen           (KDS)
 //   Phase 6: /app/service-requests
 //   Phase 7: /app/payments          (already stubbed)
 //   Phase 8: /app/reports

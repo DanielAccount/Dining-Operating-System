@@ -14,6 +14,10 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import java.time.OffsetDateTime;
 
@@ -55,7 +59,18 @@ public class TableSession extends AbstractTenantEntity {
     private Branch branch;
 
     @ManyToOne(fetch = FetchType.EAGER) // see the comment on `branch`
-    @JoinColumn(name = "table_id", nullable = false)
+    // Fetch the table in its own SELECT instead of joining it into every
+    // session query. That lets @NotFound observe the soft-deleted row and
+    // resolve the association to null instead of filtering the session out.
+    @Fetch(FetchMode.SELECT)
+    // A table can be retired after this session and its orders exist. The
+    // historical session must remain loadable: the order keeps its own table
+    // number snapshot. IGNORE turns the soft-delete-filtered row into a null
+    // association instead of failing the entire order/KDS request. The FK is
+    // immutable, so updatable=false prevents a later session update from
+    // writing table_id=NULL.
+    @JoinColumn(name = "table_id", nullable = false, updatable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private TableEntity table;
 
     /**

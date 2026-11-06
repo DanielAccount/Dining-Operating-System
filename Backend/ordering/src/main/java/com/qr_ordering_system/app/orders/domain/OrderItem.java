@@ -16,6 +16,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
@@ -66,7 +68,13 @@ public class OrderItem extends AbstractTenantEntity {
     private Long branchId;
 
     @ManyToOne(fetch = FetchType.EAGER) // see the comment on `order`
-    @JoinColumn(name = "menu_item_id", nullable = false)
+    // This is an immutable historical FK. A menu item may be retired
+    // (soft-deleted) after customers have already ordered it; the line then
+    // loads with a null association and uses its own name/price snapshots.
+    // updatable=false is essential: without it, updating an old line writes
+    // menu_item_id=NULL and violates the database's NOT NULL constraint.
+    @JoinColumn(name = "menu_item_id", nullable = false, updatable = false)
+    @NotFound(action = NotFoundAction.IGNORE)
     private MenuItem menuItem;
 
     /** Localized name at order time; menu edits later must not rewrite tickets. */
